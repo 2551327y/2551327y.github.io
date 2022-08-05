@@ -1,22 +1,26 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-const Dashboard = () => import("@/views/Dashboard.vue");
-
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes: [
         {
             path: '/',
-            redirect: '/dashboard',
+            redirect: '/cases',
         },
         {
-            path: '/dashboard',
+            path: '/cases',
             components: {
-                main: Dashboard,
+                main: () => import("@/views/cases.vue"),
             },
             meta: {
                 keepAlive: true,
             }
+        },
+        {
+            path: '/test',
+            components: {
+                main: () => import("@/views/test.vue"),
+            },
         }
     ]
 })

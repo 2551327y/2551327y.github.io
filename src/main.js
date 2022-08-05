@@ -16,4 +16,9 @@ app.use(Quasar, {
     plugins: {}, // import Quasar plugins and add here
 })
 
+import { createPinia } from 'pinia';
+
+const pinia = createPinia();
+app.use(pinia);
+
 app.mount('#app')
