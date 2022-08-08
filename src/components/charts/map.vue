@@ -111,6 +111,10 @@ const hasBubble = [
 
 export default {
     props: {
+        title: {
+            type: String,
+            default: '',
+        },
         ratio: {
             type: Number,
             default: 16 / 9,
@@ -121,8 +125,20 @@ export default {
         },
         category: {
             type: String,
-            default: 'deaths',
-        }
+            default: 'cases',
+        },
+        scaleIdx: {
+            type: Number,
+            default: 0,
+        },
+        targetIdx: {
+            type: Number,
+            default: 0,
+        },
+        hasBubbleIdx: {
+            type: Number,
+            default: 0,
+        },
     },
     watch: {
         timeRange: {
@@ -132,8 +148,11 @@ export default {
             }
         },
         hasBubble: {
+            // FIXME: switch the bubble
             handler: function () {
-                this.hasBubble.value && this.setBubble();
+                if (this.hasBubble.value) {
+                    this.setBubble();
+                }
             }
         },
         maxRadius: {
@@ -177,9 +196,9 @@ export default {
                 hasBubble: hasBubble,
             },
             // config
-            scale: scale[0],
-            target: Object.entries(meta.properties).filter(d => d[1].category == this.category).map(d => d[1])[0],
-            hasBubble: hasBubble[0],
+            scale: scale[this.scaleIdx],
+            target: Object.entries(meta.properties).filter(d => d[1].category == this.category).map(d => d[1])[this.targetIdx],
+            hasBubble: hasBubble[this.hasBubbleIdx],
             maxRadius: 40,
             timeRange: meta.properties.date.range,
             // range
@@ -202,8 +221,7 @@ export default {
             this.map.setOption({
                 title: {
                     show: true,
-                    text: meta.properties.new_cases.name.replace(/\b\w/g, (s) =>
-                        s.toUpperCase()),
+                    text: this.title,
                 },
                 // geo config
                 geo: [
@@ -299,14 +317,18 @@ export default {
                 gte: ticks[ticks.length - 1],
                 color: color(ticks[ticks.length - 1]),
             }];
-            ticks.reduce((min, max) => {
-                pieces.push({
-                    gte: min,
-                    lt: max,
-                    color: color(min),
+            try {
+                ticks.reduce((min, max) => {
+                    pieces.push({
+                        gte: min,
+                        lt: max,
+                        color: color(min),
+                    });
+                    return max;
                 });
-                return max;
-            });
+            } catch (e) {
+                console.log(ticks, domain, this.target.value, this.timeRange[1])
+            }
             this.map.setOption({
                 visualMap: {
                     id: 'map',

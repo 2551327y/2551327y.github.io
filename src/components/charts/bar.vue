@@ -6,31 +6,35 @@
             </q-responsive>
         </q-card-section>
         <q-separator />
-        <div>
+        <div :class="`${isFullscreen ? 'fixed-bottom' : ''}`">
             <q-toolbar dense class="q-pa-md row no-wrap justify-between">
                 <div class="row no-wrap q-col-gutter-md justify-start">
                     <q-select class="col" dense options-cover outlined :options="options.xAxis" v-model="xAxis"
                         :option-value="item => item.value" :option-label="item => item.name">
                         <template #before>
-                            <span class="text-body1">Range</span>
+                            <span class="text-caption">
+                                Range
+                            </span>
                         </template>
                         <template v-slot:selected-item="scope">
                             <div class="ellipsis">{{ scope.opt.name }}</div>
                         </template>
+                        <q-tooltip>Ranges providing different granularity of changes</q-tooltip>
                     </q-select>
                     <q-select class="col" options-cover dense outlined :options="options.target"
                         :option-value="item => item.value" :option-label="item => item.name" v-model="target">
                         <template #before>
-                            <span class="text-body1">Data</span>
+                            <span class="text-caption">Data</span>
                         </template>
                         <template v-slot:selected-item="scope">
                             <div class="ellipsis">{{ scope.opt.name }}</div>
                         </template>
+                        <q-tooltip>Target Keys providing different perspectives</q-tooltip>
                     </q-select>
                     <q-input class="col" type="number" requied debounce="300" dense min="1" max="30" outlined
                         v-model="yAxis">
                         <template #before>
-                            <span class="text-body1">yAxis</span>
+                            <span class="text-caption">yAxis</span>
                         </template>
                         <q-tooltip>
                             Num of top displayed
@@ -38,16 +42,14 @@
                     </q-input>
                 </div>
                 <div>
-                    <q-btn class="col" flat round dense icon="filter_alt" @click="isFilterDialog = !isFilterDialog">
-                        <q-tooltip>Select Countries in a popup dialog</q-tooltip>
-                    </q-btn>
                     <q-btn flat round dense :icon="!play.state ? 'play_circle' : 'pause_circle'" @click="setThumb">
                         <q-tooltip>Play</q-tooltip>
                     </q-btn>
                     <q-btn flat round dense icon="restart_alt">
                         <q-tooltip>Reset</q-tooltip>
                     </q-btn>
-                    <q-btn flat round dense :icon="!isFullscreen ? 'fullscreen' : 'fullscreen_exit'">
+                    <q-btn flat round dense :icon="!isFullscreen ? 'fullscreen' : 'fullscreen_exit'"
+                        @click="setFullscreen">
                         <q-tooltip>Fullscreen</q-tooltip>
                     </q-btn>
                 </div>
@@ -55,29 +57,21 @@
             <q-separator />
             <q-toolbar dense class="q-mt-md row justify-center">
                 <q-slider class="col-10 q-mx-xl" dense :min="0" :max="100" color="teal" v-model="rangeValue"
-                    @change="setTimeRange" label :markers="25" :marker-labels="setMarkerLabels"
-                    :label-value="`${setLabelsValue(rangeValue)}`" />
+                    @change="setCurrentDate" label :markers="25" :marker-labels="markerLabels"
+                    :label-always="play.state ? true : false" :label-value="`${setLabelsValue(rangeValue)}`" />
             </q-toolbar>
         </div>
         <q-inner-loading :showing="loading" />
     </q-card>
-    <q-dialog v-model="isFilterDialog">
-        <q-card>
-            <q-card-section>
-                <div class="text-h6">Filter</div>
-            </q-card-section>
-            <q-card-actions align="right">
-                <q-btn flat label="Cancel" color="primary" v-close-popup />
-                <q-btn flat label="Confrim" color="primary" v-close-popup />
-            </q-card-actions>
-        </q-card>
-    </q-dialog>
 </template>
 
 <script lang="js">
+import { markRaw, nextTick } from 'vue';
 import * as echarts from 'echarts';
 import * as d3 from 'd3';
-import { countries, default_countries, xAxis } from '@/assets/charts.config.js';
+import { countries, xAxis } from '@/assets/charts.config.js';
+import { mapState } from 'pinia';
+import { countriesStore } from '@/stores/countries.js';
 import meta from '@/assets/owid-covid-data.meta.json';
 import { fetch, i18nEncoder, i18n_en, formatDate } from '@/assets/util.js';
 
@@ -99,16 +93,64 @@ export default {
                 this.setBar();
             }
         },
+        xAxis: {
+            handler: function () {
+                const scheme = this.xAxis.value;
+
+                if (scheme == -1) {
+                    this.timeRange = d3.extent(this.dataset.map.keys(), d => d);
+                } else {
+                    const b = new Date(this.timeRange[1]);
+                    const a = d3[scheme[0]].offset(b, -scheme[1]);
+                    this.timeRange = [formatDate(a), formatDate(b)];
+                }
+
+                this.sliderStep = this.xAxis.step;
+                this.dateInterpolator.range(this.timeRange.map(d => new Date(d)));
+                this.markerLabels = this.getMarkerLabels();
+                this.currentDate = this.timeRange[1];
+            }
+        },
         yAxis: {
             handler: function () {
                 this.setBar();
             }
         },
-        xAxis: {
+        selection: {
             handler: function () {
-                const [handler, offset] = this.xAxis.value;
-                const end = meta.properties.data.range[1];
-                const start = d3[handler].offset(new Date(end), -offset);
+                // TODO: optimize the structure of function
+                const data = new Array;
+                const raw = this.dataset.raw;
+                // init prop Dataset array
+                this.selection.map(code => {
+                    const inRange = raw[code].data.filter(d => d.date < this.timeRange[1] && d.date >= this.timeRange[0]);
+                    data.push(...inRange.map(d => {
+                        return {
+                            iso_a3: code,
+                            date: d.date,
+                            value: d[this.target.value],
+                        }
+                    }))
+                })
+
+                // set temperate dataset in option
+                this.dataset.map = d3.group(data, d => d.date);
+
+                // set the timeRange
+                this.timeRange = d3.extent(this.dataset.map.keys(), d => d);
+                this.dateInterpolator.range(this.timeRange.map(d => new Date(d))); // re-orientate the date interpolator
+                this.currentDate = this.timeRange[1];
+
+                try {
+                    this.setBar();
+                } catch (e) {
+                    console.log(e);
+                }
+            }
+        },
+        currentDate: {
+            handler: function (latest, old) {
+                this.setBar();
             }
         }
     },
@@ -117,7 +159,9 @@ export default {
             bar: null, // bar chart instance
             isFullscreen: false, // fullscreen flag
             loading: true,  // inner loading flag
-            isFilterDialog: false, // filter dialog flag
+            // slider markers props
+            markerLabels: [],
+            sliderStep: 1,
             /**
              * play state store
              */
@@ -139,9 +183,9 @@ export default {
             yAxis: 10,
             target: Object.entries(meta.properties).filter(d => d[1].category == this.category).map(d => d[1])[0],
             rangeValue: 100,
+            timeRange: meta.properties.date.range, // date range in current dataset map
+            currentDate: null,
             chartRatio: this.ratio,
-            timeRange: meta.properties.date.range,
-            currentDate: '2021-01-01',
             /** 
              *  transform value to date
              *  combine with formatDate function.
@@ -149,9 +193,17 @@ export default {
             dateInterpolator: d3.scaleLinear(meta.properties.date.range.map(d => new Date(d))).domain([0, 100]),
         }
     },
+    computed: {
+        ...mapState(countriesStore, {
+            selection: 'selection',
+        }),
+    },
     methods: {
+        setCurrentDate() {
+            this.currentDate = formatDate(this.dateInterpolator(this.rangeValue));
+        },
         initBar() {
-            if (!this.bar) this.bar = echarts.init(this.$refs['bar']);
+            if (!this.bar) this.bar = markRaw(echarts.init(this.$refs['bar']));
 
             this.bar.setOption({
                 xAxis: {
@@ -166,7 +218,7 @@ export default {
                 },
                 title: {
                     show: true,
-                    text: meta.properties.new_cases.name.replace(/\b\w/g, (s) =>
+                    text: this.target.name.replace(/\b\w/g, (s) =>
                         s.toUpperCase()),
                 },
                 grid: [{
@@ -177,7 +229,7 @@ export default {
                 yAxis: {
                     id: 'yAxis',
                     type: 'category',
-                    max: Math.min(this.yAxis, default_countries.length) - 1,
+                    max: Math.min(this.yAxis, this.selection.length) - 1,
                     inverse: true,
                     nameLocation: 'middle',
                     axisLabel: {
@@ -197,6 +249,10 @@ export default {
                         itemStyle: {
                             color: 'rgb(52, 106, 83)',
                         },
+                        encode: {
+                            x: 'value',
+                            y: 'iso_a3',
+                        },
                         label: {
                             show: true,
                             formatter: params => params.data[params.dimensionNames[2]],
@@ -205,13 +261,13 @@ export default {
                             valueAnimation: true,
                         }
                     }
-                ]
+                ],
             });
 
             const data = new Array;
             const raw = this.dataset.raw;
             // init prop Dataset array
-            default_countries.map(code => {
+            this.selection.map(code => {
                 const inRange = raw[code].data.filter(d => d.date < this.timeRange[1] && d.date >= this.timeRange[0]);
                 data.push(...inRange.map(d => {
                     return {
@@ -221,60 +277,57 @@ export default {
                     }
                 }))
             })
-            // set temperate dataset in option
-            this.dataset.map = data;
 
-            this.setBar();
+            // set temperate dataset in option
+            this.dataset.map = d3.group(data, d => d.date);
+            this.timeRange = d3.extent(this.dataset.map.keys(), d => d);
+            this.dateInterpolator.range(this.timeRange.map(d => new Date(d))); // reorientate the date interpolator
+            this.currentDate = this.timeRange[1];
         },
         updateDataset() {
             this.loading = true;
             const { raw, map } = this.dataset;
-            map.forEach(d => d.value = raw[d.iso_a3].data.find(r => r.date == d.date)[this.target.value]);
+            for (let items of map.values()) {
+                items.forEach(d => d.value = raw[d.iso_a3].data.find(r => r.date == d.date)[this.target.value])
+            }
             this.loading = false;
         },
         setBar() {
             this.bar.setOption({
                 dataset: {
                     id: 'bar',
-                    dimensions: ['iso_a3', 'date', 'value'],
-                    source: this.dataset.map.filter(d => d.date == this.currentDate),
+                    source: this.dataset.map.get(this.currentDate),
                 },
-                series: [{
-                    id: 'bar',
-
-                    encode: {
-                        x: 'value',
-                        y: 'iso_a3',
-                    },
-
-                }],
                 yAxis: {
                     id: 'yAxis',
-                    max: Math.min(default_countries.length, this.yAxis) - 1,
+                    max: Math.min(this.selection.length, this.yAxis) - 1,
+                },
+                title: {
+                    text: this.currentDate
                 }
             })
         },
-        updateDate() {
+        getMarkerLabels() {
+            let marker = [0, 25, 50, 75, 100];
 
-        },
-        setMarkerLabels(value) {
-            return formatDate(new Date(this.dateInterpolator(value))).replace(/-/g, '/')
+            return marker.map(num => {
+                return {
+                    value: num,
+                    label: formatDate(new Date(this.dateInterpolator(num))).replace(/-/g, '/'),
+                }
+            })
         },
         setLabelsValue(value) {
             return formatDate(this.dateInterpolator(value))
-        },
-        setTimeRange() {
-            this.timeRange = [formatDate(this.dateInterpolator(this.rangeValue.min)), formatDate(this.dateInterpolator(this.rangeValue.max))];
         },
         setThumb() {
             this.play.state = !this.play.state;
             const that = this;
             if (this.play.state) {
-                this.rangeValue.max = 0;
+                this.rangeValue = this.rangeValue >= 100 ? 0 : this.rangeValue;
                 this.play.timer = setInterval(() => {
-                    if (that.rangeValue.max < 100) {
-                        that.rangeValue.max++;
-                        that.setTimeRange();
+                    if (that.rangeValue < 100) {
+                        this.setCurrentDate(that.rangeValue = that.rangeValue + that.sliderStep);
                     } else {
                         that.setThumb();
                     }
@@ -282,6 +335,13 @@ export default {
             } else {
                 clearInterval(this.play.timer);
             }
+        },
+        async setFullscreen() {
+            this.isFullscreen = !this.isFullscreen;
+            this.chartRatio = this.isFullscreen ? (16 / 7) : this.ratio;
+            // waitting for next update
+            await nextTick();
+            this.bar.resize();
         },
         async pullRaw() {
             const that = this;
@@ -297,6 +357,11 @@ export default {
         i18nEncoder.registerLocale(i18n_en);
     },
     mounted: async function () {
+        /**
+         * init some data props
+         */
+        this.markerLabels = this.getMarkerLabels();
+
         await this.pullRaw();
         this.initBar();
     }

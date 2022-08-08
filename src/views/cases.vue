@@ -2,28 +2,35 @@
     <q-page-container>
         <q-page padding>
             <q-list>
-                <q-item class="col justify-center">
-                    <div class="col-8">
-                        <div class="text-h5 text-blue text-weight-bold q-my-md" v-intersection="onIntersection"
-                            :data-id="0">Confirmed
-                            Cases
-                            Chart</div>
-                        <bar-chart />
-                    </div>
-                </q-item>
-                <q-item class="col justify-center">
-                    <div class="col-8">
-                        <div class="text-h5 q-my-md" v-intersection="onIntersection" :data-id="1">Confirmed Cases
-                            Map</div>
-                        <line-chart />
-                    </div>
+                <q-item class="col justify-center q-col-gutter-x-md">
+                    <q-item-section>
+                        <div class="q-my-md text-h5 text-weight-bold row justify-between">
+                            <span>Daily number of confirmed cases</span>
+                            <q-icon name="bookmark_border" />
+                        </div>
+                        <div class="q-my-md row no-wrap q-col-gutter-x-md">
+                            <div class="col-6">
+                                <line-chart-overview title="Daily new confirmed cases comparing with World Line"
+                                    :comparatorIdx="0" :xAxisIdx="5" :targetIdx="1" />
+                            </div>
+                            <div class="col-6">
+                                <line-chart title="Daily new confirmed cases comparing with countries population over 100m" :xAxisIdx="5" :targetIdx="1" :filterIdx="1" :scaleIdx="0" />
+                            </div>
+                        </div>
+                    </q-item-section>
                 </q-item>
                 <q-item class="col justify-center q-col-gutter-x-md">
-                    <div class="col-6">
-                        <div class="text-h5 q-my-md" v-intersection="onIntersection" :data-id="2">Confirmed Cases
-                            Bar</div>
-                        <map-chart />
-                    </div>
+                    <q-item-section>
+                        <div class="q-my-md text-h5 text-weight-bold row justify-between">
+                            <span>Daily confirmed cases per million people</span>
+                            <q-icon name="bookmark_border" />
+                        </div>
+                        <div class="q-my-md row no-wrap q-col-gutter-x-md">
+                            <div class="col-6">
+                                <map-chart />
+                            </div>
+                        </div>
+                    </q-item-section>
                 </q-item>
             </q-list>
             <q-page-sticky position="bottom-right" :offset="[30, 30]">
@@ -51,17 +58,21 @@
 </template>
 
 <script>
+// TODO: modularize the code
+// TODO: had better to move the drawer
 import MapChart from '@/components/charts/map.vue';
 import LineChart from '@/components/charts/line.vue';
 import BarChart from '@/components/charts/bar.vue';
 import Selector from '../components/selector.vue';
+import LineChartOverview from '../components/overview-charts/line.vue';
 
 export default {
     components: {
         MapChart,
         LineChart,
         BarChart,
-        Selector
+        Selector,
+        LineChartOverview,
     },
     data() {
         return {

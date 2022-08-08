@@ -27,36 +27,14 @@
                             <div class="ellipsis">{{ scope.opt.name }}</div>
                         </template>
                     </q-select>
-                    <q-select class="col" options-cover options-selected-class="text-deep-orange-8" dense outlined
-                        :option-value="item => item.value" :option-label="item => item.name" :options="options.filter"
-                        v-model="filter">
+                    <q-select multiple class="col" options-selected-class="text-blue bg-grey-3" options-cover dense
+                        outlined :options="options.comparators" :option-value="item => item.value"
+                        :option-label="item => item.name" v-model="comparator">
                         <template #before>
-                            <span class="text-caption">Comparator</span>
+                            <span class="text-caption">Line</span>
                         </template>
-                        <template #option="filter">
-                            <q-expansion-item v-if="filter.opt.type == 'group'" default-opened
-                                header-class="text-weight-bold" :group="filter.opt.name" expand-separator
-                                :label="filter.opt.name">
-                                <template v-for="child in filter.opt.children" :key="child.name">
-                                    <q-item clickable v-ripple v-close-popup>
-                                        <q-item-section @click="setFilter(Object.assign(child, {
-                                            type: filter.opt.name,
-                                        }))">
-                                            <q-item-label>{{ child.name }}</q-item-label>
-                                        </q-item-section>
-                                    </q-item>
-                                </template>
-                            </q-expansion-item>
-                            <q-item v-else clickable v-ripple v-close-popup>
-                                <q-item-section @click="setFilter(Object.assign(filter.opt, {
-                                    type: filter.opt.name
-                                }))">
-                                    <q-item-label>{{ filter.opt.name }}</q-item-label>
-                                </q-item-section>
-                            </q-item>
-                        </template>
-                        <template v-slot:selected-item="scope">
-                            <div class="ellipsis">{{ scope.opt.name }}</div>
+                        <template #selected>
+                            <div class="ellipsis">{{ comparator.length }} lines added</div>
                         </template>
                     </q-select>
                     <q-select class="col" options-cover dense outlined :options="options.xAxis"
@@ -88,16 +66,21 @@
 // color scheme
 import colorScheme from '@/assets/colors.echarts.json';
 import * as echarts from 'echarts';
-import { fetch, formatDate, i18nEncoder, i18n_en } from '@/assets/util.js';
-import { markRaw, nextTick } from 'vue';
-import meta from '@/assets/owid-covid-data.meta.json';
 import * as d3 from 'd3';
-import { filters, xAxis, default_countries, countries } from '@/assets/charts.config.js';
-// pinia import
+import { markRaw, nextTick } from 'vue';
+// fetch dataset && iso code translator
+import { fetch, i18n_en, i18nEncoder, formatDate } from '@/assets/util.js';
+// some configs imported
+import { xAxis, OWID_data } from '@/assets/charts.config.js';
+// pinia store
 import { mapState, mapActions } from 'pinia';
 import { countriesStore } from '@/stores/countries.js';
+// meta info
+import meta from '@/assets/owid-covid-data.meta.json';
+// lodash
 import * as _ from 'lodash';
 
+// select options
 const scale = [
     {
         name: 'Linear',
@@ -123,6 +106,10 @@ export default {
             type: Number,
             default: 16 / 9,
         },
+        hideBottom: {
+            type: Boolean,
+            default: false,
+        },
         category: {
             type: String,
             default: 'cases',
@@ -132,7 +119,7 @@ export default {
             type: Number,
             default: 0,
         },
-        filterIdx: {
+        comparatorIdx: {
             type: Number,
             default: 0,
         },
@@ -140,9 +127,9 @@ export default {
             type: Number,
             default: 5,
         },
-        hideBottom: {
-            type: Boolean,
-            default: false,
+        targetIdx: {
+            type: Number,
+            default: 0,
         }
     },
     watch: {
@@ -151,7 +138,7 @@ export default {
                 this.chart.setOption({
                     yAxis: [
                         {
-                            id: 'yAxis',
+                            id: 'left',
                             type: scale.value,
                             min: scale.value == 'log' ? 1 : 0,
                         }
@@ -161,13 +148,13 @@ export default {
         },
         target: {
             handler: function () {
-                this.setChart();
+                this.updateLine();
             }
         },
         timeRange: {
             handler: function () {
                 this.chart.setOption({
-                    dataset: this.countries.map(code => {
+                    dataset: this.lines.map(code => {
                         return {
                             id: `dataset_${code}`,
                             source: this.dataset.raw[code].data.filter(
@@ -178,71 +165,51 @@ export default {
                 })
             }
         },
-        filter: {
-            handler: function (scheme) {
-                this.updateFilter(scheme);
-
-                this.chart.setOption({
-                    dataset: this.countries.map(code => {
-                        return {
-                            id: `dataset_${code}`,
-                            dimensions: ['date', this.target.value],
-                            source: this.dataset.raw[code].data.filter(
-                                (d, i) => d.date < this.timeRange[1] && d.date >= this.timeRange[0] && !(i % this.sample) // sample the dataset to have better performance
-                            )
-                        }
-                    }),
-                }, {
+        comparator: {
+            handler: function () {
+                this.lines = _.union(this.comparator.map(d => d.value), this.selection, this.entries);
+                this.updateDataset({
                     replaceMerge: ['dataset'],
-                    lazyUpdate: true,
-                });
-
-                this.setChart({
-                    replaceMerge: ['series'],
-                    lazyUpdate: true,
-                });
-            },
-        },
-        countries: {
-            handler: function () { }
+                })
+                this.updateLine();
+            }
         },
         selection: {
             handler: function () {
-                this.countries = _.union(this.filterCountries, this.selection, this.entries);
-                this.setChart({
-                    replaceMerge: ['series', 'dataset']
-                });
+                this.lines = _.union(this.comparator.map(d => d.value), this.selection, this.entries);
+                this.updateDataset({
+                    replaceMerge: ['dataset'],
+                })
+                this.updateLine();
             }
         }
     },
     data() {
         return {
             chart: null,
-            loading: true,
             isFullscreen: false,
-            chartRatio: this.ratio,
             dataset: {
                 raw: null,
             },
+            chartRatio: this.ratio,
+            loading: true,
+            lines: [],
             options: {
                 scale: scale,
-                target: Object.entries(meta.properties).filter(d => d[1].category == this.category).map(d => d[1]),
-                filter: filters,
+                target: Object.entries(meta.properties).filter(d => d[1].category == this.category && /per_million/.test(d[0])).map(d => d[1]),
+                comparators: OWID_data,
                 xAxis: xAxis,
             },
-            // config
-            // timeRange
-            sample: xAxis[this.xAxisIdx].sample,
-            countries: null,
-            scale: scale[this.scaleIdx],
-            target: Object.entries(meta.properties).filter(d => d[1].category == this.category).map(d => d[1])[0],
-            filter: filters[this.filterIdx].children[0],
-            filterCountries: [],
+            // toolbar config
+            sample: xAxis[this.xAxisIdx].sample, // sampling parameters to elevate performance
+            scale: scale[this.scaleIdx], // scale handler
+            target: Object.entries(meta.properties).filter(d => d[1].category == this.category && /per_million/.test(d[0])).map(d => d[1])[this.targetIdx], // target dimension
+            comparator: [OWID_data[this.comparatorIdx]], // select comparator
             xAxis: xAxis[this.xAxisIdx],
         }
     },
     computed: {
-        // config
+        // filtering dataset within a date range
         timeRange: function () {
             const scheme = this.xAxis.value;
             this.sample = this.xAxis.sample;
@@ -260,58 +227,49 @@ export default {
         }),
     },
     methods: {
-        async initChart() {
-
+        setLine() {
             if (!this.chart) {
                 echarts.registerTheme('shine', colorScheme);
                 this.chart = markRaw(echarts.init(this.$refs['chart'], 'shine'));
             }
-            if (!this.dataset.raw) await this.pullRaw();
 
-            this.updateFilter(this.filter);
+            this.lines = _.union(this.selection, this.comparator.map(d => d.value), this.entries);
 
-            // default option for chart
-            this.chart.setOption({
+            const options = {
                 dataZoom: [
                     {
                         id: 'inside',
                         type: 'inside',
+                        xAxisIndex: 0,
                     },
                     {
+                        id: 'slider',
                         type: 'slider',
                         show: true,
                         yAxisIndex: 0,
                         left: 0,
                     },
                     {
+                        id: 'sliderBottom',
                         type: 'slider',
                         show: true,
                         xAxisIndex: 0,
-                    },
+                    }
                 ],
-                brush: {
-                    id: 'brush',
-                    toolbox: ['lineX', 'clear'],
-                    brushLink: 'all',
-                    xAxisIndex: 'all',
-                    throttleType: 'debounce',
-                    throttleDelay: 300,
-                },
-                xAxis: {
-                    type: 'time',
-                    name: 'Date',
-                },
+                xAxis: [
+                    {
+                        type: 'time',
+                        name: 'Date',
+                    }
+                ],
                 yAxis: [
                     {
-                        id: 'yAxis',
+                        id: 'left',
                         type: 'value',
-                        name: this.target.name.replace(/\b\w/g, d => d.toUpperCase()),
+                        name: this.category,
                         axisLabel: {
-                            formatter: d3.format('~s')
-                        },
-                        nameTextStyle: {
-                            align: 'left',
-                        },
+                            formatter: d3.format('~s'),
+                        }
                     }
                 ],
                 grid: [
@@ -320,35 +278,45 @@ export default {
                         show: true,
                     }
                 ],
-                tooltip: {
-                    show: true,
-                    trigger: 'item',
-                    // order: 'valueDesc',
-                    confine: true,
-                },
                 title: {
                     id: 'title',
                     show: true,
                     text: this.title,
                     left: 'left',
                 },
-                dataset: this.countries.map(code => {
-                    const datasetId = `dataset_${code}`;
+                brush: {
+                    id: 'brush',
+                    toolbox: ['lineX', 'clear'],
+                    brushLink: 'all',
+                    xAxisIndex: 'all',
+                    throttleType: 'debounce',
+                    throttleDelay: 300,
+                },
+                tooltip: {
+                    show: true,
+                    trigger: 'item',
+                    confine: true,
+                },
+                dataset: this.lines.map(code => {
+                    const id = `dataset_${code}`;
                     return {
-                        id: datasetId,
+                        id: id,
                         dimensions: ['date', this.target.value],
                         source: this.dataset.raw[code].data.filter(
                             (d, i) => d.date < this.timeRange[1] && d.date >= this.timeRange[0] && !(i % this.sample)
                         )
                     }
                 })
-            })
+            }
+
+            this.chart.setOption(options);
 
             const that = this;
+            // throw an event about selected brush
             this.chart.on('brushSelected', function (params) {
                 that.$emit('brushSelected', params);
             })
-
+            // coordination dbclick to add/remove selection
             this.chart.on('dblclick', function (params) {
                 console.log(params);
                 const { seriesId: code } = params;
@@ -369,39 +337,23 @@ export default {
                 }
             })
 
-            this.setChart();
+            this.updateLine();
         },
-        // update dataset due to selectior.vue notification
-        setDataset(init = {}) {
-            this.chart.setOption({
-                dataset: this.countries.map(code => {
-                    const datasetId = `dataset_${code}`;
-                    return {
-                        id: datasetId,
-                        dimensions: ['date', this.target.value],
-                        source: this.dataset.raw[code].data.filter(
-                            (d, i) => d.date < this.timeRange[1] && d.date >= this.timeRange[0] && !(i % this.sample)
-                        )
-                    }
-                })
-            }, init)
-        },
-        setChart(init = {}) {
+        updateLine(init = {}) {
             const that = this;
-
-            this.chart.setOption({
-                dataset: this.countries.map(code => {
+            const options = {
+                dataset: this.lines.map(code => {
                     return {
                         id: `dataset_${code}`,
                         dimensions: ['date', this.target.value],
                     }
                 }),
-                series: this.countries.map(code => {
+                series: this.lines.map(code => {
                     return {
                         id: code,
                         type: 'line',
                         datasetId: `dataset_${code}`,
-                        name: i18nEncoder.getName(code, 'en'),
+                        name: code.length == 3 ? i18nEncoder.getName(code, 'en') : (OWID_data.find(d => d.value == code).name),
                         encode: {
                             itemId: 'date',
                             x: 'date',
@@ -413,45 +365,53 @@ export default {
                             overflow: 'truncate',
                             valueAnimation: false,
                         },
-                        emphasis: Object.assign({
+                        emphasis: {
                             show: true,
                             focus: 'self',
-
-                        }, !this.selection.includes(code) ? {
-                            lineStyle: {
-                                opacity: 1,
-                            },
-                            itemStyle: {
-                                opacity: 1,
-                            }
-                        } : {}),
-                        itemStyle: !this.selection.includes(code) ? {
-                            opacity: 0.2,
-                        } : {
-                            opacity: 1,
                         },
                         lineStyle: !this.selection.includes(code) ? {
-                            type: 'solid',
-                            width: 1,
-                            opacity: 0.2,
-                        } : {
-                            type: 'solid',
+                            shadowColor: 'black',
                             width: 3,
-                            opacity: 1,
-                        },
+                            shadowBlur: 10,
+                        } : {},
                         tooltip: {
                             formatter: params => this.getTooltip(params, that),
                             extraCssText: 'width: 200px; white-space:normal'
-                        },
+                        }
                     }
                 }),
-                yAxis: [
-                    {
-                        id: 'yAxis',
-                        name: this.target.name.replace(/\b\w/g, d => d.toUpperCase()),
+            };
+
+            this.chart.setOption(options, init)
+        },
+        async setFullscreen() {
+            this.isFullscreen = !this.isFullscreen;
+            this.chartRatio = this.isFullscreen ? (16 / 7) : this.ratio;
+            // waitting for next update
+            await nextTick();
+            this.chart.resize();
+        },
+        updateDataset(init = {}) {
+            const options = {
+                dataset: this.lines.map(code => {
+                    const id = `dataset_${code}`;
+                    return {
+                        id: id,
+                        dimensions: ['date', this.target.value],
+                        source: this.dataset.raw[code].data.filter(
+                            (d, i) => d.date < this.timeRange[1] && d.date >= this.timeRange[0] && !(i % this.sample)
+                        )
                     }
-                ],
-            }, init);
+                })
+            }
+
+            this.chart.setOption(options, init);
+        },
+        resetChart() {
+            this.scale = scale[this.scaleIdx];
+            this.target = this.options.target[0];
+            this.comparator = [];
+            this.xAxis = xAxis[this.xAxisIdx];
         },
         getTooltip(params, that) {
             const { value, seriesName, seriesId, dimensionNames } = params;
@@ -489,49 +449,6 @@ export default {
                     </div>
                     `
         },
-        setFilter(filter) {
-            this.filter = filter;
-        },
-        updateFilter(scheme) {
-            const raw = this.dataset.raw;
-
-            switch (scheme.label) {
-                case 'continent': {
-                    this.filterCountries = countries.filter(code => raw[code].continent == scheme.value)
-                    break;
-                }
-                case 'population': {
-                    this.filterCountries = countries.filter(code => raw[code].population > scheme.value)
-                    break;
-                }
-                case 'default': {
-                    this.filterCountries = []
-                    break;
-                }
-            }
-
-            this.countries = _.union(this.filterCountries, this.selection, this.entries);
-        },
-        resetChart() {
-            this.chart.clear();
-
-            // set default settings for chart.
-            this.countries = this.selection;
-            this.target = Object.entries(meta.properties).filter(d => d[1].category == this.category).map(d => d[1])[0];
-            this.scale = scale[0];
-            this.xAxis = xAxis[this.xAxisIdx];
-            this.filter = filters[0];
-
-            // re-init chart
-            this.initChart();
-        },
-        async setFullscreen() {
-            this.isFullscreen = !this.isFullscreen;
-            this.chartRatio = this.isFullscreen ? (16 / 7) : this.ratio;
-            // waitting for next update
-            await nextTick();
-            this.chart.resize();
-        },
         async pullRaw() {
             const that = this;
             that.loading = true;
@@ -540,16 +457,18 @@ export default {
                 that.loading = false;
             });
         },
-        ...mapActions(countriesStore, {
-            addSelection: 'addSelection', removeSelection: 'removeSelection'
-        })
+        ...mapActions(countriesStore, ['addSelection', 'removeSelection']),
     },
     created: function () {
         i18nEncoder.registerLocale(i18n_en);
     },
     mounted: async function () {
-        this.countries = this.selection;
-        await this.initChart();
-    }
+        // fetch data
+        await this.pullRaw();
+        // init parameters
+        this.lines = this.selection;
+
+        this.setLine();
+    },
 }
 </script>

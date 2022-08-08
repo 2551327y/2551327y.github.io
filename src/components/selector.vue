@@ -15,7 +15,8 @@
                         <span class="text-body1">Sort By</span>
                     </template>
                     <template #after>
-                        <q-btn round :class="isAscending ? 'flip-vertical' : ''" v-ripple flat dense icon="sort" @click="toggleAscending" />
+                        <q-btn round :class="isAscending ? 'flip-vertical' : ''" v-ripple flat dense icon="sort"
+                            @click="toggleAscending" />
                     </template>
                 </q-select>
             </div>
@@ -69,7 +70,7 @@ export default {
             },
             type: propMeta.keys[0],
             formatter: d3.format(','),
-            isAscending: true,
+            isAscending: false,
         }
     },
     watch: {
@@ -89,6 +90,10 @@ export default {
         },
         updateSelection() {
             this.selection = this.choices.map(d => d.iso_code);
+            this.$q.notify({
+                message: 'Changes have been applied',
+                color: 'secondary',
+            })
         },
         getLabel(item) {
             return item.replace(/_/g, ' ').replace(/\b\w/g, word => word.toUpperCase())
