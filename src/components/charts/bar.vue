@@ -84,6 +84,10 @@ export default {
         category: {
             type: String,
             default: 'cases',
+        },
+        color: {
+            type: String,
+            default: 'rgb(52, 106, 83)',
         }
     },
     watch: {
@@ -232,12 +236,6 @@ export default {
                     max: Math.min(this.yAxis, this.selection.length) - 1,
                     inverse: true,
                     nameLocation: 'middle',
-                    axisLabel: {
-                        show: true,
-                        formatter: code => i18nEncoder.getName(code, 'en'),
-                        overflow: 'break',
-                        fontWeight: 'bold',
-                    },
                 },
                 series: [
                     {
@@ -245,9 +243,9 @@ export default {
                         type: 'bar',
                         realtimeSort: true,
                         seriesLayoutBy: 'column',
-                        type: 'bar',
+                        // datasetI: 'bar',
                         itemStyle: {
-                            color: 'rgb(52, 106, 83)',
+                            color: this.color,
                         },
                         encode: {
                             x: 'value',
@@ -293,19 +291,29 @@ export default {
             this.loading = false;
         },
         setBar() {
+            const data = this.dataset.map.get(this.currentDate);
             this.bar.setOption({
-                dataset: {
-                    id: 'bar',
-                    source: this.dataset.map.get(this.currentDate),
-                },
+                series: [
+                    {
+                        id: 'bar',
+                        data: data,
+                    }
+                ],
                 yAxis: {
                     id: 'yAxis',
                     max: Math.min(this.selection.length, this.yAxis) - 1,
+                    axisLabel: {
+                        show: true,
+                        formatter: idx => i18nEncoder.getName(data[idx].iso_a3, 'en'),
+                        overflow: 'break',
+                        fontWeight: 'bold',
+                    },
                 },
                 title: {
                     text: this.currentDate
                 }
             })
+            console.log(this.dataset.map.get(this.currentDate))
         },
         getMarkerLabels() {
             let marker = [0, 25, 50, 75, 100];

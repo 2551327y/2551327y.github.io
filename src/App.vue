@@ -4,7 +4,10 @@
             <nav-bar></nav-bar>
         </q-header>
 
-        <router-view name="main"></router-view>
+        <div>
+            <router-view name="main"></router-view>
+            
+        </div>
     </q-layout>
 </template>
 

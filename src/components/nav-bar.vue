@@ -6,7 +6,10 @@
         <q-space />
 
         <q-tabs no-caps>
-            <q-route-tab ripple to="/" icon="dashboard" label="Cases" />
+            <q-route-tab ripple to="/cases" icon="dashboard" label="Cases" />
+            <q-route-tab ripple to="/deaths" icon="gavel" label="Deaths" />
+            <q-route-tab ripple to="/vaccinations" icon="vaccines" label="Vaccin" />
+            <q-route-tab ripple to="/testing" icon="science" label="Test" />
         </q-tabs>
     </q-toolbar>
 </template>

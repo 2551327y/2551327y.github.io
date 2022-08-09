@@ -17,6 +17,33 @@ const router = createRouter({
             }
         },
         {
+            path: '/deaths',
+            components: {
+                main: () => import("@/views/deaths.vue"),
+            },
+            meta: {
+                keepAlive: true,
+            }
+        },
+        {
+            path: '/vaccinations',
+            components: {
+                main: () => import("@/views/vaccinations.vue"),
+            },
+            meta: {
+                keepAlive: true,
+            }
+        },
+        {
+            path: '/testing',
+            components: {
+                main: () => import("@/views/testing.vue"),
+            },
+            meta: {
+                keepAlive: true,
+            }
+        },
+        {
             path: '/test',
             components: {
                 main: () => import("@/views/test.vue"),

@@ -190,6 +190,7 @@ export default {
             isFullscreen: false,
             dataset: {
                 raw: null,
+                selection: null,
             },
             chartRatio: this.ratio,
             loading: true,
@@ -306,7 +307,7 @@ export default {
                             (d, i) => d.date < this.timeRange[1] && d.date >= this.timeRange[0] && !(i % this.sample)
                         )
                     }
-                })
+                }),
             }
 
             this.chart.setOption(options);
@@ -413,15 +414,20 @@ export default {
             this.comparator = [];
             this.xAxis = xAxis[this.xAxisIdx];
         },
-        getTooltip(params, that) {
+        getTooltip(params, that, datasetIdx = 'raw') {
             const { value, seriesName, seriesId, dimensionNames } = params;
             const targetName = dimensionNames[1];
             const { date } = value;
             // average
-            const { raw } = that.dataset;
+            const { raw, selection } = that.dataset;
             // caculate the time range
             const begin7day = formatDate(d3.timeDay.offset(new Date(date), -7));
-            const past7days = raw[seriesId].data.filter(d => d.date <= date && d.date > begin7day);
+            let past7days;
+            if (datasetIdx == 'raw') {
+                past7days = raw[seriesId].data.filter(d => d.date <= date && d.date > begin7day);
+            } else {
+                past7days = selection.filter(d => d.date <= date && d.date > begin7day);
+            }
             const mean = d3.mean(past7days, d => d[targetName]);
             const max = d3.max(past7days, d => d[targetName]);
             const min = d3.min(past7days, d => d[targetName]);
@@ -448,6 +454,22 @@ export default {
                         </div>
                     </div>
                     `
+        },
+        getSelectionLine() {
+            const raw = _.flatten(this.selection.map(code => this.dataset.raw[code].data.filter(
+                (d, i) => d.date < this.timeRange[1] && d.date >= this.timeRange[0] && !(i % this.sample)
+            )));
+            const data = d3.group(raw, d => d.date);
+
+            const res = new Array;
+            for (const date of data.keys()) {
+                const values = data.get(date);
+                const o = { date: date };
+                this.options.target.forEach(key => o[key.value] = d3.mean(values, d => d[key.value]));
+                res.push(o);
+            }
+            this.dataset.selection = res;
+            return res;
         },
         async pullRaw() {
             const that = this;

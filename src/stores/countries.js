@@ -13,7 +13,7 @@ export const countriesStore = defineStore('countries', {
             this.selection = _.union(this.selection, [target]);
         },
         removeSelection(target) {
-            if (this.selection.includes(target)) {
+            if (target.length == 3 && this.selection.includes(target)) {
                 this.selection = _.without(this.selection, target);
                 return true;
             } else {

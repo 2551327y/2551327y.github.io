@@ -209,6 +209,7 @@ export default {
         selection: {
             handler: function () {
                 this.countries = _.union(this.filterCountries, this.selection, this.entries);
+                this.setDataset();
                 this.setChart({
                     replaceMerge: ['series', 'dataset']
                 });
@@ -350,7 +351,6 @@ export default {
             })
 
             this.chart.on('dblclick', function (params) {
-                console.log(params);
                 const { seriesId: code } = params;
                 const result = that.selection.findIndex(d => d == code);
 

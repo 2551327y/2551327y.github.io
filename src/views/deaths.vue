@@ -11,7 +11,7 @@
                         </div>
                         <div class="q-my-md row no-wrap q-col-gutter-x-md items-start">
                             <div class="col-8">
-                                <bar-chart category="cases" :ratio="16 / 7" />
+                                <bar-chart color="rgb(167, 42, 70)" category="deaths" :ratio="16 / 7" />
                             </div>
                         </div>
                     </div>
@@ -27,12 +27,12 @@
                         <div class="q-my-md row no-wrap q-col-gutter-x-md items-start">
                             <div class="col-6">
                                 <line-chart-overview title="Daily new confirmed cases comparing with World Line"
-                                    :comparatorIdx="0" :xAxisIdx="5" :targetIdx="1" />
+                                    category="deaths" :comparatorIdx="0" :xAxisIdx="5" :targetIdx="1" />
                             </div>
                             <div class="col-6">
                                 <line-chart
                                     title="Daily new confirmed cases comparing with countries population over 100m"
-                                    :xAxisIdx="5" :targetIdx="1" :filterIdx="1" :scaleIdx="0" />
+                                    category="deaths" :xAxisIdx="5" :targetIdx="1" :filterIdx="1" :scaleIdx="0" />
                             </div>
                         </div>
                     </div>
@@ -45,7 +45,7 @@
                             <span>🗺️ Daily number of confirmed cases with geographical perspective</span>
                             <q-icon name="bookmark_border" />
                         </div>
-                        <map-bar-chart />
+                        <map-bar-chart category="deaths" />
                     </div>
                 </div>
                 <q-separator class="q-my-xl" />
@@ -92,7 +92,6 @@ import BarChart from '@/components/charts/bar.vue';
 import Selector from '@/components/selector.vue';
 import LineChartOverview from '@/components/overview-charts/line.vue';
 import MapBarChart from '@/components/charts/map-bar.vue';
-
 
 export default {
     components: {
@@ -151,6 +150,7 @@ export default {
                 block: 'center'
             })
         },
+
     },
 };
 </script>

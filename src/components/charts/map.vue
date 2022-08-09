@@ -1,9 +1,11 @@
 <template>
     <q-card :class="isFullscreen ? 'fullscreen' : ''">
         <q-card-section>
-            <q-responsive :ratio="chartRatio">
-                <div ref="map" />
-            </q-responsive>
+            <div class="q-gutter-x-md">
+                <q-responsive :ratio="chartRatio">
+                    <div ref="map"></div>
+                </q-responsive>
+            </div>
         </q-card-section>
         <q-separator :class="`${isFullscreen ? 'invisible' : ''}`" />
         <div :class="`${isFullscreen ? 'fixed-bottom' : ''}`">
@@ -81,6 +83,8 @@ import * as echarts from 'echarts';
 import meta from '@/assets/owid-covid-data.meta.json';
 import * as d3 from 'd3';
 import { markRaw, nextTick } from 'vue';
+import { mapActions, mapState } from 'pinia';
+import { countriesStore } from '@/stores/countries.js';
 
 // scale Handler list
 const scale = [
@@ -137,9 +141,10 @@ export default {
         },
         hasBubbleIdx: {
             type: Number,
-            default: 0,
+            default: 1,
         },
     },
+    emits: ['brushAreas', 'updateTimeRange', 'targetChange', 'areaSelected'],
     watch: {
         timeRange: {
             handler: function () {
@@ -148,10 +153,11 @@ export default {
             }
         },
         hasBubble: {
-            // FIXME: switch the bubble
             handler: function () {
                 if (this.hasBubble.value) {
                     this.setBubble();
+                } else {
+                    this.removeBubble();
                 }
             }
         },
@@ -168,7 +174,12 @@ export default {
         },
         target: {
             handler: function () {
+                this.$emit('targetChange', this.target);
                 this.setMap();
+                if (this.hasBubble) {
+                    this.updateBubble();
+                    this.setBubble();
+                }
             }
         },
     },
@@ -209,6 +220,11 @@ export default {
             dateInterpolator: d3.scaleLinear(meta.properties.date.range.map(d => new Date(d))).domain([0, 100]),
         };
     },
+    computed: {
+        ...mapState(countriesStore, {
+            selection: 'selection',
+        }),
+    },
     methods: {
         async initGeo() {
             this.map = markRaw(echarts.init(this.$refs['map']));
@@ -244,13 +260,35 @@ export default {
                     show: true,
                     trigger: 'item',
                 },
+                toolbox: {
+                    id: 'toolbox',
+                    orient: 'vertical',
+                    left: 0,
+                },
             });
 
-            // set event listener
+            // add db event listener
             const that = this;
-            this.map.on('click', function (param) {
-                that.$emit('selected', param);
-            });
+            this.map.on('dblclick', function (params) {
+                const { data: { name: code } } = params;
+                const result = that.selection.findIndex(d => d == code);
+                console.log(code,result)
+
+                if (result == -1) {
+                    that.addSelection(code);
+                    that.$q.notify({
+                        message: `${i18nEncoder.getName(code, 'en')} have been added from charts`,
+                        color: 'secondary',
+                    })
+                } else {
+                    that.removeSelection(code);
+                    that.$q.notify({
+                        message: `${i18nEncoder.getName(code, 'en')} have been removed from charts`,
+                        color: 'secondary',
+                    })
+                }
+                that.$emit('areaSelected', params);
+            })
 
             await this.setMap();
             this.hasBubble.value && await this.setBubble();
@@ -270,6 +308,7 @@ export default {
                     )
                 ),
             ];
+            if (domain[1] == undefined) domain[1] = 0;
             this.dataset.domain = domain;
 
             // data caculation && series define
@@ -292,6 +331,7 @@ export default {
             });
             // format => {name: 'ABW', value: 221} 
             this.dataset.data = data; // data can be shared by bubbles && map color chart.
+            const that = this;
             this.map.setOption({
                 series: [
                     {
@@ -301,7 +341,7 @@ export default {
                         data: data,
                         tooltip: {
                             position: 'right',
-                            formatter: (params) => `${i18nEncoder.getName(params.name, 'en')}: <b>${d3.format(',')(params.data.value)}</b>`
+                            formatter: params => this.getTooltip(params, that),
                         },
                     }
                 ]
@@ -344,14 +384,15 @@ export default {
                     top: 0,
                 }
             });
-
-            this.map.on("click", (param) => {
-                this.$emit("selected", param);
-            });
         },
-        async setBubble() {
+        async setBubble(init = {}) {
+            const that = this;
             // init params 
-            const getSize = val => d3[this.scale.value]().domain(this.dataset.domain).range([0, this.maxRadius])(val[2]);
+            const getSize = val => {
+                const handler = d3[this.scale.value]().domain(this.dataset.domain).range([0, this.maxRadius])
+                handler.unknown(0);
+                return handler((val[2]));
+            };
             const geo = this.dataset.geo;
             const data = this.dataset.data.map(d => {
                 return {
@@ -359,7 +400,23 @@ export default {
                     value: d3.geoCentroid(geo.features.find(c => c.properties.iso_a3 == d.name)).concat([d.value])
                 }
             })
+            
             this.map.setOption({
+                brush: {
+                    id: 'bubbleBrush',
+                    toolbox: ['rect', 'polygon', 'clear'],
+                    geoIndex: 0,
+                    seriesIndex: 1,
+                    brushStyle: {
+                        borderWidth: 2,
+                        color: 'rgb(0, 150, 136, 0.2)',
+                    },
+                    throttleType: 'debounce',
+                    throttleDelay: 300,
+                    inBrush: {
+                        color: 'rgb(176, 57, 91)'
+                    },
+                },
                 series: [
                     {
                         id: 'bubble',
@@ -376,11 +433,79 @@ export default {
                         },
                         tooltip: {
                             position: 'right',
-                            formatter: (params) => `${i18nEncoder.getName(params.name, 'en')}: <b>${d3.format(',')(params.value[2])}</b>`
+                            formatter: params => this.getTooltip(params, that),
                         }
                     }
                 ]
+            }, init);
+
+            // add brush event listener
+            this.map.on('brushselected', function (params) {
+                const idxs = params.batch[0].selected[1].dataIndex;
+                const codes = idxs.map(idx => data[idx]?.name);
+                if (codes.length > 0) that.$emit('brushAreas', codes);
+            })
+        },
+        updateBubble() {
+            const getSize = val => d3[this.scale.value]().domain(this.dataset.domain).range([0, this.maxRadius])(val[2]);
+            this.map.setOption({
+                series: [
+                    {
+                        id: 'bubble',
+                        type: 'scatter',
+                        symbolSize: getSize,
+                        data: this.dataset.data,
+                    }
+                ]
             });
+        },
+        removeBubble() {
+            this.map.setOption({
+                series: [
+                    {
+                        id: 'map',
+                    }
+                ]
+            }, {
+                replaceMerge: ['series']
+            })
+        },
+        getTooltip(params, that) {
+            const { value, name } = params;
+            const targetName = that.target.value;
+            const date = that.timeRange[1];
+            // average
+            const { raw } = that.dataset;
+            // caculate the time range
+            const begin7day = formatDate(d3.timeDay.offset(new Date(date), -7));
+            const past7days = raw[name].data.filter(d => d.date <= date && d.date > begin7day);
+            const mean = d3.mean(past7days, d => d[targetName]);
+            const max = d3.max(past7days, d => d[targetName]);
+            const min = d3.min(past7days, d => d[targetName]);
+            const median = d3.median(past7days, d => d[targetName]);
+            const deviation = d3.deviation(past7days, d => d[targetName]);
+
+            // format
+            const format = d3.format(',')
+
+            return `<div>
+                        <p style='color:black;font-weight:bold;border-bottom:solid black 1px;margin:0'>${i18nEncoder.getName(name,'en')}, ${d3.timeDay.count(new Date(date), new Date)} days ago</p>
+                        <p style='font-size:10px;color:grey;border-bottom:solid black 1px;margin:0;padding:0'>
+                            <span style='font-weight:bold;font-style:italic;'>${format(value[2])}</span> ${targetName.replace(/_/g, ' ')} cases on ${value.date}
+                        </p>
+                        <div style='font-size:10px;color:black;margin:0;border-bottom:solid black 1px;'>
+                            <p style='margin:0'>Over past 7 days, ${targetName.replace(/_/g, ' ')}</p>
+                            <p style='margin:0'>🔹Average <span style='font-weight:bold;font-style:italic;'>${format(mean.toFixed(2))}</span></p>
+                            <p style='margin:0'>🔹Median <span style='font-weight:bold;font-style:italic;'>${format(median.toFixed(2))}</span></p>
+                            <p style='margin:0'>🔹Max <span style='font-weight:bold;font-style:italic;'>${format(max)}</span></p>
+                            <p style='margin:0'>🔹Min <span style='font-weight:bold;font-style:italic;'>${format(min)}</span></p>
+                            <p style='margin:0'>🔹Deviation <span style='font-weight:bold;font-style:italic;'>${format(deviation.toFixed(2))}</span></p>
+                        </div>
+                        <div style='font-size:10px;margin-top:5px'>
+                            double click to add this line to other charts.
+                        </div>
+                    </div>
+                    `
         },
         setLoading(state) {
             this.loading = state
@@ -388,6 +513,7 @@ export default {
         resetMap() { },
         async setFullscreen() {
             this.isFullscreen = !this.isFullscreen;
+            this.chartRatio = this.isFullscreen ? (16 / 7) : this.ratio;
             // waitting for next update
             await nextTick();
             this.map.resize();
@@ -400,12 +526,13 @@ export default {
         },
         setTimeRange() {
             this.timeRange = [formatDate(this.dateInterpolator(this.rangeValue.min)), formatDate(this.dateInterpolator(this.rangeValue.max))];
+            this.$emit('updateTimeRange', this.timeRange);
         },
         setThumb() {
             this.play.state = !this.play.state;
             const that = this;
             if (this.play.state) {
-                this.rangeValue.max = 0;
+                if (this.rangeValue.max == 100) this.rangeValue.max = 0;
                 this.play.timer = setInterval(() => {
                     if (that.rangeValue.max < 100) {
                         that.rangeValue.max++;
@@ -413,7 +540,7 @@ export default {
                     } else {
                         that.setThumb();
                     }
-                }, 1000);
+                }, 1300);
             } else {
                 clearInterval(this.play.timer);
             }
@@ -432,6 +559,9 @@ export default {
                 that.dataset.geo = geo;
             });
         },
+        ...mapActions(countriesStore, {
+            addSelection: 'addSelection', removeSelection: 'removeSelection'
+        })
     },
     created: function () {
         //  register the en lang for encoder
