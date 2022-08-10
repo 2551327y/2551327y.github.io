@@ -132,6 +132,10 @@ export default {
             type: Number,
             default: 0,
         },
+        targetIdx: {
+            type: Number,
+            default: 1,
+        },
         filterIdx: {
             type: Number,
             default: 0,
@@ -236,7 +240,7 @@ export default {
             sample: xAxis[this.xAxisIdx].sample,
             countries: null,
             scale: scale[this.scaleIdx],
-            target: Object.entries(meta.properties).filter(d => d[1].category == this.category).map(d => d[1])[0],
+            target: Object.entries(meta.properties).filter(d => d[1].category == this.category).map(d => d[1])[this.targetIdx],
             filter: filters[this.filterIdx].children[0],
             filterCountries: [],
             xAxis: xAxis[this.xAxisIdx],

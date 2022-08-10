@@ -13,6 +13,14 @@
                             <div class="col-8">
                                 <bar-chart category="cases" :ratio="16 / 7" />
                             </div>
+                            <div class="col-4">
+                                <q-card>
+                                    <q-card-section>
+                                        <span class="text-h6">Side Column</span>
+                                        <div class="text-caption">Some secondary aid content for novice user.</div>
+                                    </q-card-section>
+                                </q-card>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -51,9 +59,20 @@
                 <q-separator class="q-my-xl" />
                 <div class="item">
                     <div class="section">
-                        <div class="q-my-lg text-h5 text-weight-bold row justify-between">
-                            <span>Daily confirmed cases per million people</span>
+                        <div class="q-my-lg text-h5 text-weight-bold row justify-between" :data-id="3"
+                            v-intersection="onIntersection">
+                            <span>Total confirmed cases per million people</span>
                             <q-icon name="bookmark_border" />
+                        </div>
+                        <div class="q-my-md row no-wrap q-col-gutter-x-md items-start">
+                            <div class="col-6">
+                                <line-chart-overview title="Total confirmed cases comparing with World Line"
+                                    :comparatorIdx="0" :xAxisIdx="5" :targetIdx="0" />
+                            </div>
+                            <div class="col-6">
+                                <line-chart title="Total confirmed cases comparing with countries population over 100m"
+                                    :xAxisIdx="5" :targetIdx="0" :filterIdx="1" :scaleIdx="0" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -114,20 +133,32 @@ export default {
             records: [
                 {
                     icon: 'bar_chart',
-                    content: 'Rank, Bar Chart',
+                    content: 'Daily Cases Rank',
                     id: 0,
                     active: true,
                 },
                 {
                     icon: 'timeline',
-                    content: 'TimeLine, Line Chart',
+                    content: 'Daily Cases Timeline',
                     id: 1,
                     active: false,
                 },
                 {
                     icon: 'map',
-                    content: 'Geo, Map Chart',
+                    content: 'Daily Cases Spread Map',
                     id: 2,
+                    active: false,
+                },
+                {
+                    icon: 'timeline',
+                    content: 'Total Cases Timeline',
+                    id: 3,
+                    active: false,
+                },
+                {
+                    icon: 'map',
+                    content: 'Total Cases Spread Map',
+                    id: 4,
                     active: false,
                 }
             ]

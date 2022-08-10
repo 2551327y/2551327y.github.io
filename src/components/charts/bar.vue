@@ -304,7 +304,13 @@ export default {
                     max: Math.min(this.selection.length, this.yAxis) - 1,
                     axisLabel: {
                         show: true,
-                        formatter: idx => i18nEncoder.getName(data[idx].iso_a3, 'en'),
+                        formatter: idx => {
+                            try {
+                                return i18nEncoder.getName(data[idx].iso_a3, 'en')
+                            } catch(e) {
+                                console.log(e + idx);
+                            }
+                        },
                         overflow: 'break',
                         fontWeight: 'bold',
                     },
@@ -313,7 +319,6 @@ export default {
                     text: this.currentDate
                 }
             })
-            console.log(this.dataset.map.get(this.currentDate))
         },
         getMarkerLabels() {
             let marker = [0, 25, 50, 75, 100];
