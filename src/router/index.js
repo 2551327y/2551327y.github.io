@@ -44,6 +44,12 @@ const router = createRouter({
             }
         },
         {
+            path: '/explorer',
+            components: {
+                main: () => import("@/views/explorer.vue"),
+            }
+        },
+        {
             path: '/test',
             components: {
                 main: () => import("@/views/test.vue"),

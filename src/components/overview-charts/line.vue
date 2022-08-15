@@ -197,14 +197,14 @@ export default {
             lines: [],
             options: {
                 scale: scale,
-                target: Object.entries(meta.properties).filter(d => d[1].category == this.category && /per_million/.test(d[0])).map(d => d[1]),
+                target: Object.entries(meta.properties).filter(d => d[1].category == this.category && /per_/.test(d[0])).map(d => d[1]),
                 comparators: OWID_data,
                 xAxis: xAxis,
             },
             // toolbar config
             sample: xAxis[this.xAxisIdx].sample, // sampling parameters to elevate performance
             scale: scale[this.scaleIdx], // scale handler
-            target: Object.entries(meta.properties).filter(d => d[1].category == this.category && /per_million/.test(d[0])).map(d => d[1])[this.targetIdx], // target dimension
+            target: Object.entries(meta.properties).filter(d => d[1].category == this.category && /per_/.test(d[0])).map(d => d[1])[this.targetIdx], // target dimension
             comparator: [OWID_data[this.comparatorIdx]], // select comparator
             xAxis: xAxis[this.xAxisIdx],
         }

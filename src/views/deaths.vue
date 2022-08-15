@@ -7,11 +7,21 @@
                         <div class="q-my-lg text-h5 text-weight-bold row justify-between" :data-id="0"
                             v-intersection="onIntersection">
                             <span>⬇️ Daily number of confirmed cases rank</span>
-                            <q-btn v-ripple round flat icon="bookmark_border" />
+                            <q-btn v-ripple round flat icon="bookmark" @click="toggleBookmark(elements[0].charts)">
+                                <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
+                            </q-btn>
                         </div>
                         <div class="q-my-md row no-wrap q-col-gutter-x-md items-start">
                             <div class="col-8">
-                                <bar-chart color="rgb(167, 42, 70)" category="deaths" :ratio="16 / 7" />
+                                <bar-chart :color="elements[0].charts[0].color" category="deaths" :ratio="16 / 7" />
+                            </div>
+                            <div class="col-4">
+                                <q-card>
+                                    <q-card-section>
+                                        <span class="text-h6">Side Column</span>
+                                        <div class="text-caption">Some secondary aid content for novice user.</div>
+                                    </q-card-section>
+                                </q-card>
                             </div>
                         </div>
                     </div>
@@ -22,7 +32,9 @@
                         <div class="q-my-lg text-h5 text-weight-bold row justify-between" :data-id="1"
                             v-intersection="onIntersection">
                             <span>⏱️ Daily number of confirmed cases over the timeline</span>
-                            <q-icon name="bookmark_border" />
+                            <q-btn v-ripple round flat icon="bookmark" @click="toggleBookmark(elements[1].charts)">
+                                <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
+                            </q-btn>
                         </div>
                         <div class="q-my-md row no-wrap q-col-gutter-x-md items-start">
                             <div class="col-6">
@@ -43,20 +55,14 @@
                         <div class="q-my-lg text-h5 text-weight-bold row justify-between" :data-id="2"
                             v-intersection="onIntersection">
                             <span>🗺️ Daily number of confirmed cases with geographical perspective</span>
-                            <q-icon name="bookmark_border" />
+                            <q-btn v-ripple round flat icon="bookmark" @click="toggleBookmark(elements[2].charts)">
+                                <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
+                            </q-btn>
                         </div>
                         <map-bar-chart category="deaths" />
                     </div>
                 </div>
                 <q-separator class="q-my-xl" />
-                <div class="item">
-                    <div class="section">
-                        <div class="q-my-lg text-h5 text-weight-bold row justify-between">
-                            <span>Daily confirmed cases per million people</span>
-                            <q-icon name="bookmark_border" />
-                        </div>
-                    </div>
-                </div>
             </div>
             <q-page-sticky position="bottom-right" :offset="[30, 30]">
                 <q-btn fab icon="filter_alt" color="teal" @click="setSelectorVisible" />
@@ -66,7 +72,7 @@
     <q-drawer v-model="drawer" show-if-above :width="200" :breakpoint="500">
         <q-scroll-area class="fit">
             <q-list padding class="menu-list q-ma-md">
-                <q-item :active="h.active" :focused="h.active" clickable v-ripple v-for="h in records" :key="h.content"
+                <q-item :active="h.active" :focused="h.active" clickable v-ripple v-for="h in elements" :key="h.content"
                     @click="toChart(h)">
                     <q-item-section avatar>
                         <q-icon :name="h.icon" />
@@ -92,6 +98,8 @@ import BarChart from '@/components/charts/bar.vue';
 import Selector from '@/components/selector.vue';
 import LineChartOverview from '@/components/overview-charts/line.vue';
 import MapBarChart from '@/components/charts/map-bar.vue';
+import { mapActions } from 'pinia';
+import { useBookmarks } from '@/stores/bookmarks.js';
 
 export default {
     components: {
@@ -110,24 +118,56 @@ export default {
                 map: { loading: true },
                 line: { loading: true },
             },
-            records: [
+            elements: [
                 {
                     icon: 'bar_chart',
                     content: 'Rank, Bar Chart',
                     id: 0,
                     active: true,
+                    charts: [{
+                        name: 'bar-chart',
+                        title: 'Daily new confirmed deaths Rank',
+                        category: 'deaths',
+                        color: 'rgb(167, 42, 70)',
+                        col: 6,
+                    }],
                 },
                 {
                     icon: 'timeline',
                     content: 'TimeLine, Line Chart',
                     id: 1,
                     active: false,
+                    charts: [{
+                        name: 'line-chart-overview',
+                        category: 'deaths',
+                        col: 6,
+                        title: 'Daily new confirmed deaths comparing with World Line',
+                        comparatorIdx: 0,
+                        xAxisIdx: 5,
+                        targetIdx: 1,
+                    },{
+                        name: 'line-chart',
+                        category: 'deaths',
+                        col: 6,
+                        title: 'Daily new confirmed deaths comparing with countries population over 100m',
+                        xAxisIdx: 5,
+                        targetIdx: 1,
+                        filterIdx: 1,
+                        scaleIdx: 0,
+                    }],
                 },
                 {
                     icon: 'map',
                     content: 'Geo, Map Chart',
                     id: 2,
                     active: false,
+                    charts: [
+                        {
+                            name: 'map-bar-chart',
+                            category: 'deaths',
+                            col: 12,
+                        }
+                    ]
                 }
             ]
         };
@@ -140,7 +180,7 @@ export default {
             this.charts[target].loading = state;
         },
         onIntersection(entry) {
-            const target = this.records[entry.target.dataset.id];
+            const target = this.elements[entry.target.dataset.id];
             target.active = !!entry.isIntersecting ? true : false;
         },
         toChart(h) {
@@ -150,7 +190,16 @@ export default {
                 block: 'center'
             })
         },
-
+        toggleBookmark(metas) {
+            this.$q.notify({
+                message: 'bookmark toggled',
+                color: 'secondary',
+            });
+            this.toggle(metas);
+        },
+        ...mapActions(useBookmarks, {
+            toggle: 'toggle',
+        })
     },
 };
 </script>

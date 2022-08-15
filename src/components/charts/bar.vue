@@ -260,6 +260,7 @@ export default {
                         }
                     }
                 ],
+                animationDuration: 0,
             });
 
             const data = new Array;

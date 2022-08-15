@@ -96,12 +96,12 @@ import { filters, xAxis, default_countries, countries } from '@/assets/charts.co
 // pinia import
 import { mapState, mapActions } from 'pinia';
 import { countriesStore } from '@/stores/countries.js';
-import * as _ from 'lodash';
+import _ from 'lodash';
 
 const scale = [
     {
         name: 'Linear',
-        value: 'value'
+        value: 'value',
     },
     {
         name: 'Log',
@@ -397,7 +397,7 @@ export default {
                 dataset: this.countries.map(code => {
                     return {
                         id: `dataset_${code}`,
-                        dimensions: ['date', this.target.value],
+                        dimensions: ['date', that.target.value],
                     }
                 }),
                 series: this.countries.map(code => {
@@ -552,6 +552,7 @@ export default {
         i18nEncoder.registerLocale(i18n_en);
     },
     mounted: async function () {
+        
         this.countries = this.selection;
         await this.initChart();
     }
