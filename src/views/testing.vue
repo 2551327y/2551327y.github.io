@@ -11,6 +11,14 @@
                                 <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
                             </q-btn>
                         </div>
+                        <q-banner rounded class="bg-teal text-white">
+                            <p class="banner-tip">💡 Sometimes the bar chart will appear blank because there is no data
+                                for the specified country at the current date.
+                            </p>
+                            <template v-slot:action>
+                                <q-btn flat color="white" label="Dismiss" />
+                            </template>
+                        </q-banner>
                         <div class="q-my-md row no-wrap q-col-gutter-x-md items-start">
                             <div class="col-8">
                                 <bar-chart :color="elements[0].charts[0].color"
@@ -90,6 +98,12 @@
                     </q-item-section>
                 </q-item>
             </q-list>
+            <q-banner rounded class="bg-blue text-white q-ml-md q-mb-md absolute-bottom">
+                <p class="banner-tip">💡 Click to scroll to views conveniently.</p>
+                <p class="banner-tip">💡 Use
+                    <q-icon name="bookmark_border" /> in header to add charts to explorer section
+                </p>
+            </q-banner>
         </q-scroll-area>
     </q-drawer>
     <q-dialog persistent v-model="selectorVisible">

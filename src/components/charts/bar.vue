@@ -88,6 +88,10 @@ export default {
         color: {
             type: String,
             default: 'rgb(52, 106, 83)',
+        },
+        targetIdx: {
+            type: Number,
+            default: 1,
         }
     },
     watch: {
@@ -147,6 +151,7 @@ export default {
 
                 try {
                     this.setBar();
+                    // this.initBar()
                 } catch (e) {
                     console.log(e);
                 }
@@ -185,7 +190,7 @@ export default {
             // option selected
             xAxis: xAxis[5],
             yAxis: 10,
-            target: Object.entries(meta.properties).filter(d => d[1].category == this.category).map(d => d[1])[0],
+            target: Object.entries(meta.properties).filter(d => d[1].category == this.category).map(d => d[1])[this.targetIdx],
             rangeValue: 100,
             timeRange: meta.properties.date.range, // date range in current dataset map
             currentDate: null,
@@ -282,6 +287,8 @@ export default {
             this.timeRange = d3.extent(this.dataset.map.keys(), d => d);
             this.dateInterpolator.range(this.timeRange.map(d => new Date(d))); // reorientate the date interpolator
             this.currentDate = this.timeRange[1];
+            
+            this.setBar();
         },
         updateDataset() {
             this.loading = true;
@@ -303,13 +310,19 @@ export default {
                 yAxis: {
                     id: 'yAxis',
                     max: Math.min(this.selection.length, this.yAxis) - 1,
+                }
+            })
+            this.bar.setOption({
+                yAxis: {
+                    id: 'yAxis',
                     axisLabel: {
                         show: true,
-                        formatter: idx => {
+                        formatter: (val, idx) => {
                             try {
+                                
                                 return i18nEncoder.getName(data[idx].iso_a3, 'en')
                             } catch(e) {
-                                console.log(e + idx);
+                                console.log(idx, data, e);
                             }
                         },
                         overflow: 'break',

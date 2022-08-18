@@ -31,6 +31,7 @@
 import * as echarts from 'echarts';
 import * as d3 from 'd3';
 import mapChart from '@/components/charts/map.vue';
+import lineChart from '@/components/charts/line.vue';
 import { markRaw, nextTick } from 'vue';
 import { mapState } from 'pinia';
 import { countriesStore } from '@/stores/countries.js';
@@ -41,6 +42,7 @@ import meta from '@/assets/owid-covid-data.meta.json';
 export default {
     components: {
         mapChart,
+        lineChart,
     },
     props: {
         mapRatio: {
@@ -77,6 +79,20 @@ export default {
                 // set map dataset
                 this.dataset.map = d3.group(data, d => d.date);
 
+                // set the line chart
+                this.chart.setOption({
+                    dataset: this.series.map(code => {
+                        const datasetId = `line_${code}`;
+                        return {
+                            id: datasetId,
+                            dimensions: ['date', this.target.value],
+                            source: this.dataset.raw[code].data.filter(
+                                (d, i) => d.date < this.timeRange[1] && d.date >= this.timeRange[0] && !(i % 7)
+                            )
+                        }
+                    })
+                })
+
                 this.updateBar();
             }
         },
@@ -109,6 +125,7 @@ export default {
             timeRange: meta.properties.date.range,
             target: Object.entries(meta.properties).filter(d => d[1].category == this.category).map(d => d[1])[0],
             topNum: 15,
+
         }
     },
     computed: {
@@ -122,38 +139,76 @@ export default {
             if (!this.chart) this.chart = markRaw(echarts.init(this.$refs['chart']));
 
             const options = {
-                xAxis: {
-                    id: 'xAxis',
-                    max: 'dataMax',
-                    axisLabel: {
-                        formatter: d3.format(','),
-                    }
-                },
                 tooltip: {
                     show: true,
                 },
                 grid: [
                     {
-                        left: '20%',
+                        id: 'bar',
+                        left: '15%',
+                        right: '5%',
+                        top: '5%',
+                        height: '40%',
+                    },
+                    {
+                        id: 'line',
+                        bottom: '5%',
+                        height: '40%',
+                        left: '10%',
                         right: '5%',
                     }
                 ],
-                yAxis: {
-                    id: 'yAxis',
-                    type: 'category',
-                    nameLocation: 'middle',
-                    inverse: true,
-                    max: Math.min(this.series.length, this.topNum) - 1,
-                    axisLabel: {
-                        show: true,
-                        formatter: code => i18nEncoder.getName(code, 'en'),
-                        overflow: 'break',
-                        fontWeight: 'bold',
+                xAxis: [
+                    {
+                        id: 'xAxis',
+                        gridIndex: 0,
+                        max: 'dataMax',
+                        axisLabel: {
+                            formatter: d3.format(','),
+                        }
                     },
-                },
+                    {
+                        id: 'line',
+                        gridIndex: 1,
+                        type: 'time',
+                    }
+                ],
+                yAxis: [
+                    {
+                        id: 'yAxis',
+                        gridIndex: 0,
+                        type: 'category',
+                        nameLocation: 'middle',
+                        inverse: true,
+                        max: Math.min(this.series.length, this.topNum) - 1,
+                        axisLabel: {
+                            show: true,
+                            formatter: code => i18nEncoder.getName(code, 'en'),
+                            overflow: 'break',
+                            fontWeight: 'bold',
+                        },
+                    },
+                    {
+                        id: 'line',
+                        gridIndex: 1,
+                        type: 'value',
+                        name: this.target.name.replace(/\b\w/g, d => d.toUpperCase()),
+                        axisLabel: {
+                            formatter: d3.format('~s'),
+                        }
+                    }
+                ],
+                dataZoom: [
+                    {
+                        xAxisIndex: 1,
+                        type: 'inside',
+                    }
+                ],
                 series: [
                     {
                         id: 'bar',
+                        xAxisIndex: 0,
+                        yAxisIndex: 0,
                         type: 'bar',
                         realtimeSort: true,
                         seriesLayoutBy: 'column',
@@ -173,7 +228,23 @@ export default {
                             valueAnimation: true,
                         },
                         animationDuration: 300,
-                    }
+                    },
+                    ...this.series.map(code => {
+                        return {
+                            id: code,
+                            type: 'line',
+                            datasetId: `line_${code}`,
+                            name: i18nEncoder.getName(code, 'en'),
+                            xAxisIndex: 1,
+                            yAxisIndex: 1,
+                            encode: {
+                                itemId: 'date',
+                                x: 'date',
+                                y: this.target.value,
+                            },
+                            
+                        }
+                    })
                 ],
             };
             this.chart.setOption(options);
@@ -198,16 +269,30 @@ export default {
         },
         updateBar(init = {}) {
             const result = this.dataset.map.get(this.currendDate);
+
             const options = {
-                dataset: {
-                    id: 'bar',
-                    source: !!result ? result : [],
-                },
+                dataset: [
+                    {
+                        id: 'bar',
+                        source: !!result ? result : [],
+                    },
+                    ...this.series.map(code => {
+                        const datasetId = `line_${code}`;
+                        return {
+                            id: datasetId,
+                            dimensions: ['date', this.target.value],
+                            source: this.dataset.raw[code].data.filter(
+                                (d, i) => d.date < this.timeRange[1] && d.date >= this.timeRange[0] && !(i % 7)
+                            )
+                        }
+                    })
+                ],
                 title: {
                     text: `${!!result ? this.target.name : 'NO DATA'} ${this.currendDate}`,
                 }
             }
             this.chart.setOption(options, init);
+            console.log(this.chart.getOption())
         },
         updateAreaBrushed(params) {
             this.areaBrushed = params;
@@ -221,6 +306,20 @@ export default {
             for (let items of map.values()) {
                 items.forEach(d => d.value = raw[d.iso_a3].data.find(r => r.date == d.date)[this.target.value])
             }
+            this.chart.setOption({
+                series: [
+                    ...this.series.map(code => {
+                        return {
+                            id: code,
+                            encode: {
+                                itemId: 'date',
+                                x: 'date',
+                                y: this.target.value,
+                            },
+                        }
+                    })
+                ]
+            })
             this.updateBar();
         },
         async pullRaw() {

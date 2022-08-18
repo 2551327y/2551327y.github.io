@@ -82,6 +82,10 @@
                     </q-item-section>
                 </q-item>
             </q-list>
+            <q-banner rounded class="bg-blue text-white q-ml-md q-mb-md absolute-bottom">
+                <p class="banner-tip">💡 Click to scroll to views conveniently.</p>
+                <p class="banner-tip">💡 Use <q-icon name="bookmark_border" /> in header to add charts to explorer section</p>
+            </q-banner>
         </q-scroll-area>
     </q-drawer>
     <q-dialog persistent v-model="selectorVisible">

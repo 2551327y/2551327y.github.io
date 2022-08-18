@@ -11,9 +11,19 @@
                                 <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
                             </q-btn>
                         </div>
+                        <q-banner rounded class="bg-teal text-white">
+                            <p class="banner-tip">💡 Try to use
+                                <q-icon name="filter_alt" /> in the bottom right corner to filter specific countries.
+                            </p>
+                            <p class="banner-tip">💡 Check the tooltip infomation to understand parameter meaning while
+                                hover mouse on the input.</p>
+                            <template v-slot:action>
+                                <q-btn flat color="white" label="Dismiss" />
+                            </template>
+                        </q-banner>
                         <div class="q-my-md row no-wrap q-col-gutter-x-md items-start">
                             <div class="col-8">
-                                <bar-chart category="cases" :ratio="16 / 7" />
+                                <bar-chart category="cases" :ratio="16 / 7" :targetIdx="1" />
                             </div>
                             <div class="col-4">
                                 <q-card>
@@ -36,6 +46,16 @@
                                 <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
                             </q-btn>
                         </div>
+                        <q-banner rounded class="bg-teal text-white">
+                            <p class="banner-tip">💡 Left line👈 contains the lines generalising a subset of dataset.
+                                Right
+                                line👉 contains the lines displaying specific countires data.</p>
+                            <p class="banner-tip">💡 Drag the brushes next to the line graph to zoom the X-axis/Y-axis
+                            </p>
+                            <template v-slot:action>
+                                <q-btn flat color="white" label="Dismiss" />
+                            </template>
+                        </q-banner>
                         <div class="q-my-md row no-wrap q-col-gutter-x-md items-start">
                             <div class="col-6">
                                 <line-chart-overview title="Daily new confirmed cases comparing with World Line"
@@ -59,6 +79,13 @@
                                 <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
                             </q-btn>
                         </div>
+                        <q-banner rounded class="bg-teal text-white">
+                            <p class="banner-tip">💡 Try to delineate a geographical area with the brush tool and then
+                                look at the histogram information in the area on the right</p>
+                            <template v-slot:action>
+                                <q-btn flat color="white" label="Dismiss" />
+                            </template>
+                        </q-banner>
                         <map-bar-chart />
                     </div>
                 </div>
@@ -82,6 +109,10 @@
                     </q-item-section>
                 </q-item>
             </q-list>
+            <q-banner rounded class="bg-blue text-white q-ml-md q-mb-md absolute-bottom">
+                <p class="banner-tip">💡 Click to scroll to views conveniently.</p>
+                <p class="banner-tip">💡 Use <q-icon name="bookmark_border" /> in header to add charts to explorer section</p>
+            </q-banner>
         </q-scroll-area>
     </q-drawer>
     <q-dialog persistent v-model="selectorVisible">
@@ -130,6 +161,7 @@ export default {
                         category: 'cases',
                         col: 6,
                         title: 'Daily new confirmed cases Rank',
+                        targetIdx: 1,
                     }],
                 },
                 {
@@ -146,7 +178,7 @@ export default {
                         comparatorIdx: 0,
                         xAxisIdx: 5,
                         targetIdx: 1,
-                    },{
+                    }, {
                         name: 'line-chart',
                         category: 'cases',
                         col: 6,
@@ -202,7 +234,7 @@ export default {
             hasBookmark: 'has',
         })
     },
-    mounted: function() {
+    mounted: function () {
         this.elements.forEach(e => {
             e.marked = this.hasBookmark(e.charts);
         })
@@ -213,5 +245,9 @@ export default {
 <style>
 .menu-list .q-item {
     border-radius: 32px;
+}
+
+.banner-tip {
+    margin-block: 0;
 }
 </style>
