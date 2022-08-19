@@ -1,0 +1,1 @@
+import{Q as a,a as e}from"./QPageContainer.cfa964bf.js";import{_ as t,o,e as r,w as c,a as s}from"./index.2baa40a8.js";const n={};function _(f,i){return o(),r(a,null,{default:c(()=>[s(e)]),_:1})}const d=t(n,[["render",_]]);export{d as default};
