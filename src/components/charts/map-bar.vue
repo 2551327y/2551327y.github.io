@@ -62,38 +62,7 @@ export default {
         },
         areaBrushed: {
             handler: function () {
-                // update map dataset
-                let data = new Array;
-                const { raw } = this.dataset;
-                this.series = _.union(this.selection, this.areaBrushed);
-                this.series.map(code => {
-                    data.push(...raw[code].data.map(d => {
-                        return {
-                            iso_a3: code,
-                            date: d.date,
-                            value: !!d[this.target.value] ? d[this.target.value] : 0,
-                        }
-                    }))
-                })
-
-                // set map dataset
-                this.dataset.map = d3.group(data, d => d.date);
-
-                // set the line chart
-                this.chart.setOption({
-                    dataset: this.series.map(code => {
-                        const datasetId = `line_${code}`;
-                        return {
-                            id: datasetId,
-                            dimensions: ['date', this.target.value],
-                            source: this.dataset.raw[code].data.filter(
-                                (d, i) => d.date < this.timeRange[1] && d.date >= this.timeRange[0] && !(i % 7)
-                            )
-                        }
-                    })
-                })
-
-                this.updateBar();
+                this.updateSeries()
             }
         },
         topNum: {
@@ -108,7 +77,7 @@ export default {
         },
         selection: {
             handler: function () {
-                // console.log(this.selection)
+                this.updateSeries();
             }
         }
     },
@@ -155,7 +124,7 @@ export default {
                         bottom: '5%',
                         height: '40%',
                         left: '10%',
-                        right: '5%',
+                        right: '10%',
                     }
                 ],
                 xAxis: [
@@ -202,6 +171,12 @@ export default {
                     {
                         xAxisIndex: 1,
                         type: 'inside',
+                    },
+                    {
+                        type: 'slider',
+                        yAxisIndex: 1,
+                        left: 0,
+                        fillerColor: 'rgba(0, 150, 136, 0.3)',
                     }
                 ],
                 series: [
@@ -242,7 +217,12 @@ export default {
                                 x: 'date',
                                 y: this.target.value,
                             },
-                            
+                            endLabel: {
+                                show: true,
+                                formatter: '{a}',
+                                overflow: 'truncate',
+                                valueAnimation: false,
+                            },
                         }
                     })
                 ],
@@ -292,7 +272,6 @@ export default {
                 }
             }
             this.chart.setOption(options, init);
-            console.log(this.chart.getOption())
         },
         updateAreaBrushed(params) {
             this.areaBrushed = params;
@@ -320,6 +299,78 @@ export default {
                     })
                 ]
             })
+            this.updateBar();
+        },
+        updateSeries() {
+            let data = new Array;
+            const { raw } = this.dataset;
+            this.series = _.union(this.selection, this.areaBrushed);
+            this.series.map(code => {
+                data.push(...raw[code].data.map(d => {
+                    return {
+                        iso_a3: code,
+                        date: d.date,
+                        value: !!d[this.target.value] ? d[this.target.value] : 0,
+                    }
+                }))
+            })
+
+            // set map dataset
+            this.dataset.map = d3.group(data, d => d.date);
+
+            // set the line chart
+            this.chart.setOption({
+                series: [
+                    {
+                        id: 'bar',
+                        xAxisIndex: 0,
+                        yAxisIndex: 0,
+                        type: 'bar',
+                        realtimeSort: true,
+                        seriesLayoutBy: 'column',
+                        itemStyle: {
+                            color: 'rgb(52, 106, 83)',
+                        },
+                        encode: {
+                            x: 'value',
+                            y: 'iso_a3',
+                        },
+                        datasetIndex: 0,
+                        label: {
+                            show: true,
+                            formatter: params => params.data[params.dimensionNames[2]],
+                            align: 'center',
+                            fontFamily: 'sans-serif monospace',
+                            valueAnimation: true,
+                        },
+                        animationDuration: 300,
+                    },
+                    ...this.series.map(code => {
+                        return {
+                            id: code,
+                            type: 'line',
+                            datasetId: `line_${code}`,
+                            name: i18nEncoder.getName(code, 'en'),
+                            xAxisIndex: 1,
+                            yAxisIndex: 1,
+                            encode: {
+                                itemId: 'date',
+                                x: 'date',
+                                y: this.target.value,
+                            },
+                            endLabel: {
+                                show: true,
+                                formatter: '{a}',
+                                overflow: 'truncate',
+                                valueAnimation: false,
+                            },
+                        }
+                    })
+                ]
+            }, {
+                replaceMerge: ['series']
+            })
+
             this.updateBar();
         },
         async pullRaw() {

@@ -5,11 +5,12 @@
         <q-space />
 
         <q-tabs no-caps>
-            <q-route-tab ripple to="/explorer" icon="join_full" label="Explorer" />
             <q-route-tab ripple to="/cases" icon="dashboard" label="Cases" />
             <q-route-tab ripple to="/deaths" icon="gavel" label="Deaths" />
             <q-route-tab ripple to="/vaccinations" icon="vaccines" label="Vaccin" />
             <q-route-tab ripple to="/testing" icon="science" label="Test" />
+            <q-route-tab ripple to="/explorer" icon="join_full" label="Explorer" />
+            <q-route-tab ripple to="/survey" icon="quiz" label="Survey" class="text-blue" />
         </q-tabs>
     </q-toolbar>
 </template>

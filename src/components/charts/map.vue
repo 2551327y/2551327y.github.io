@@ -491,7 +491,7 @@ export default {
             return `<div>
                         <p style='color:black;font-weight:bold;border-bottom:solid black 1px;margin:0'>${i18nEncoder.getName(name,'en')}, ${d3.timeDay.count(new Date(date), new Date)} days ago</p>
                         <p style='font-size:10px;color:grey;border-bottom:solid black 1px;margin:0;padding:0'>
-                            <span style='font-weight:bold;font-style:italic;'>${format(value[2])}</span> ${targetName.replace(/_/g, ' ')} cases on ${value.date}
+                            <span style='font-weight:bold;font-style:italic;'>${format(value)}</span> ${targetName.replace(/_/g, ' ')} cases on ${value.date}
                         </p>
                         <div style='font-size:10px;color:black;margin:0;border-bottom:solid black 1px;'>
                             <p style='margin:0'>Over past 7 days, ${targetName.replace(/_/g, ' ')}</p>

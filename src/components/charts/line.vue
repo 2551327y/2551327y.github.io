@@ -552,7 +552,7 @@ export default {
         i18nEncoder.registerLocale(i18n_en);
     },
     mounted: async function () {
-        
+
         this.countries = this.selection;
         await this.initChart();
     }

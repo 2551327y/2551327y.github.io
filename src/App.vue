@@ -6,7 +6,8 @@
 
         <q-drawer v-model="drawer" overlay :width="300" :breakpoint="700" elevated class="z-top rounded-borders">
             <q-scroll-area class="fit">
-                <q-list v-if="bookmarks.length" padding>
+                <q-list v-if="bookmarks.length" padding >
+                    <div class="text-h6 text-center text-teal text-weight-bold">🗂️ Bookmark</div>
                     <q-item v-for="(bookmark, idx) in bookmarks" :key="idx" class="q-pa-md">
                         <q-item-section>
                             <ul class="no-margin no-padding q-px-md">
@@ -19,8 +20,9 @@
                                             <span class="text-teal text-body1">{{ bookmark[pairs[1]] }}</span>
                                         </li>
                                     </q-card-section>
-                                    <q-card-actions>
-                                        <q-btn outline dense color='teal' label='remove' @click="removeBookmark(bookmark)" />
+                                    <q-card-actions align="right">
+                                        <q-btn outline dense class="text-warning" label='Remove' no-caps
+                                            @click="removeBookmark(bookmark)" />
                                     </q-card-actions>
                                 </q-card>
                             </ul>
@@ -32,6 +34,11 @@
                     <span class="text-caption text-grey">No bookmarks added</span>
                 </div>
             </q-scroll-area>
+            <q-banner rounded class="text-white bg-teal absolute-bottom q-ma-md">
+                <p class="q-ma-sm">💡 check
+                    <q-icon name="bookmark" /> on each section to add/remove charts to explorer.
+                </p>
+            </q-banner>
         </q-drawer>
 
         <div>

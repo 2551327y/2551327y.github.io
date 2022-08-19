@@ -92,11 +92,19 @@ export default {
         targetIdx: {
             type: Number,
             default: 1,
+        },
+        chartId: {
+            type: String,
+            default: '1',
         }
     },
     watch: {
         target: {
             handler: function () {
+                this.$emit('updateTarget', {
+                    chartId: this.chartId,
+                    content: this.target,
+                })
                 this.updateDataset();
                 this.setBar();
             }
@@ -319,7 +327,6 @@ export default {
                         show: true,
                         formatter: (val, idx) => {
                             try {
-                                
                                 return i18nEncoder.getName(data[idx].iso_a3, 'en')
                             } catch(e) {
                                 console.log(idx, data, e);

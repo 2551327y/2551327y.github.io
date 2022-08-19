@@ -50,9 +50,15 @@ const router = createRouter({
             }
         },
         {
-            path: '/test',
+            path: '/survey',
             components: {
-                main: () => import("@/views/test.vue"),
+                main: () => import("@/views/survey.vue"),
+            }
+        },
+        {
+            path: '/about',
+            components: {
+                main: () => import("@/views/about.vue"),
             },
         }
     ]
