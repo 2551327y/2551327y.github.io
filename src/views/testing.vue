@@ -11,7 +11,7 @@
                                 <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
                             </q-btn>
                         </div>
-                        <q-banner rounded class="bg-teal text-white">
+                        <q-banner rounded class="bg-teal text-white" v-if="isMetaVisible">
                             <p class="banner-tip">💡 Sometimes the bar chart will appear blank because there is no data
                                 for the specified country at the current date.
                             </p>
@@ -45,6 +45,16 @@
                                 <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
                             </q-btn>
                         </div>
+                        <q-banner rounded class="bg-teal text-white" v-if="isMetaVisible">
+                            <p class="banner-tip">💡 Left line👈 contains the lines generalising a subset of dataset.
+                                Right
+                                line👉 contains the lines displaying specific countires data.</p>
+                            <p class="banner-tip">💡 Drag the brushes next to the line graph to zoom the X-axis/Y-axis
+                            </p>
+                            <template v-slot:action>
+                                <q-btn flat color="white" label="Dismiss" />
+                            </template>
+                        </q-banner>
                         <div class="q-my-md row no-wrap q-col-gutter-x-md items-start">
                             <div class="col-6">
                                 <line-chart-overview :title="elements[1].charts[0].title"
@@ -75,6 +85,13 @@
                                 <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
                             </q-btn>
                         </div>
+                        <q-banner rounded class="bg-teal text-white" v-if="isMetaVisible">
+                            <p class="banner-tip">💡 Try to delineate a geographical area with the brush tool and then
+                                look at the histogram information in the area on the right</p>
+                            <template v-slot:action>
+                                <q-btn flat color="white" label="Dismiss" />
+                            </template>
+                        </q-banner>
                         <map-bar-chart category="deaths" />
                     </div>
                 </div>
@@ -120,8 +137,8 @@ import BarChart from '@/components/charts/bar.vue';
 import Selector from '@/components/selector.vue';
 import LineChartOverview from '@/components/overview-charts/line.vue';
 import MapBarChart from '@/components/charts/map-bar.vue';
-import { mapActions } from 'pinia';
-import { useBookmarks } from '@/stores/bookmarks.js';
+import { mapActions, mapState } from 'pinia';
+import { useBookmarks, useMeta } from '@/stores/bookmarks.js';
 export default {
     components: {
         MapChart,
@@ -199,6 +216,9 @@ export default {
                 }
             ]
         };
+    },
+    computed: {
+        ...mapState(useMeta, ['isMetaVisible']),
     },
     methods: {
         setSelectorVisible() {

@@ -1,7 +1,10 @@
 <template>
     <q-toolbar class="text-teal">
-        <q-btn flat size="md"> Covid Visualization </q-btn>
-        <q-btn flat ripple round :icon="!drawer ? 'bookmark_border' : 'bookmark'" class="q-mr-sm" @click="toggleBookmark" />
+        <q-btn flat size="md" class="text-blue"> Covid Visualization 🦠 </q-btn>
+        <q-btn flat ripple rounded :icon="!drawer ? 'bookmark_border' : 'bookmark'" class="q-mr-sm"
+            @click="toggleBookmark" label="Bookmark" no-caps />
+        <q-toggle :model-value="isMetaVisible" color="teal" label="Meta Helper"
+            @update:model-value="toggleMetaVisible" />
         <q-space />
 
         <q-tabs no-caps>
@@ -16,17 +19,26 @@
 </template>
 
 <script lang="js">
+import { mapState, mapActions } from 'pinia';
+import { useMeta } from '@/stores/bookmarks.js';
+
 export default {
     data() {
         return {
             drawer: false,
         }
     },
+    computed: {
+        ...mapState(useMeta, ['isMetaVisible'])
+    },
     methods: {
         toggleBookmark() {
             this.drawer = !this.drawer;
             this.$emit('toggleDrawer')
         },
+        ...mapActions(useMeta, {
+            toggleMetaVisible: 'toggle',
+        })
     }
 }
 </script>

@@ -6,26 +6,11 @@
 
         <q-drawer v-model="drawer" overlay :width="300" :breakpoint="700" elevated class="z-top rounded-borders">
             <q-scroll-area class="fit">
-                <q-list v-if="bookmarks.length" padding >
+                <q-list v-if="bookmarks.length" padding>
                     <div class="text-h6 text-center text-teal text-weight-bold">🗂️ Bookmark</div>
                     <q-item v-for="(bookmark, idx) in bookmarks" :key="idx" class="q-pa-md">
                         <q-item-section>
-                            <ul class="no-margin no-padding q-px-md">
-                                <q-card class="full-width">
-                                    <q-card-section>
-                                        <li v-for="(pairs) in [['✒️', 'name'], ['📃', 'category']]" :key="pairs[1]"
-                                            class="row justify-between">
-                                            <span class="text-body1 text-weight-bold">{{ `${pairs[0]} ${pairs[1]}`
-                                            }}</span>
-                                            <span class="text-teal text-body1">{{ bookmark[pairs[1]] }}</span>
-                                        </li>
-                                    </q-card-section>
-                                    <q-card-actions align="right">
-                                        <q-btn outline dense class="text-warning" label='Remove' no-caps
-                                            @click="removeBookmark(bookmark)" />
-                                    </q-card-actions>
-                                </q-card>
-                            </ul>
+                            <bookmark-card :content="bookmark" />
                         </q-item-section>
                     </q-item>
                 </q-list>
@@ -40,7 +25,6 @@
                 </p>
             </q-banner>
         </q-drawer>
-
         <div>
             <router-view name="main"></router-view>
         </div>
@@ -49,12 +33,15 @@
 
 <script>
 import NavBar from "@/components/nav-bar.vue";
-import { mapState, mapActions } from 'pinia';
+import BookmarkCard from "@/components/bookmark-card.vue";
+import { mapState } from 'pinia';
 import { useBookmarks } from '@/stores/bookmarks.js';
 
 export default {
     components: {
         NavBar,
+        BookmarkCard,
+        BookmarkCard
     },
     data() {
         return {
@@ -68,9 +55,9 @@ export default {
         toggleDrawer() {
             this.drawer = !this.drawer;
         },
-        ...mapActions(useBookmarks, {
-            removeBookmark: 'remove',
-        })
+    },
+    mounted: function () {
+        console.log('🤨 %cImplementation of Coordinated & Multiple Views in COVID-19 Visualization\n%c👉 Authored by 2551327, School of Computing Science, University of Glasgow', 'color:teal; font-size:16px; font-weight:bold', 'color:black; ')
     }
 };
 </script>

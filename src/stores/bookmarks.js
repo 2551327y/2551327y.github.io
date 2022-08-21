@@ -1,6 +1,19 @@
 import { defineStore } from 'pinia';
 import _ from 'lodash';
 
+export const useMeta = defineStore('useMeta', {
+    state: () => {
+        return {
+            isMetaVisible: true,
+        }
+    },
+    actions: {
+        toggle() {
+            this.isMetaVisible = !this.isMetaVisible;
+        }
+    }
+})
+
 export const useBookmarks = defineStore('useBookmarks', {
     state: () => {
         return {
@@ -24,7 +37,6 @@ export const useBookmarks = defineStore('useBookmarks', {
         toggle(metas) {
             metas.forEach(meta => {
                 if (_.findIndex(this.bookmarks, d => d.name == meta.name && d.category == meta.category) == -1) {
-                    console.log(meta.name)
                     this.add(meta);
                 } else {
                     this.remove(meta);
@@ -33,7 +45,10 @@ export const useBookmarks = defineStore('useBookmarks', {
         },
         has(metas) {
             return metas.every(meta => _.findIndex(this.bookmarks, d => d.name == meta.name && d.category == meta.category) > -1)
-        }
+        },
+        modify(meta, key, value) {
+            meta[key] = value;
+        },
     }
 })
 

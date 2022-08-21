@@ -11,6 +11,18 @@
                                 <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
                             </q-btn>
                         </div>
+                        <q-banner rounded class="bg-teal text-white" v-if="isMetaVisible">
+                            <p class="banner-tip">💡 Try to use
+                                <q-icon name="filter_alt" /> in the bottom right corner to filter specific
+                                countries.
+                            </p>
+                            <p class="banner-tip">💡 Check the tooltip infomation to understand parameter meaning
+                                while
+                                hover mouse on the input.</p>
+                            <template v-slot:action>
+                                <q-btn flat color="white" label="Dismiss" />
+                            </template>
+                        </q-banner>
                         <div class="q-my-md row no-wrap q-col-gutter-x-md items-start">
                             <div class="col-8">
                                 <bar-chart :color="elements[0].charts[0].color" category="deaths" :ratio="16 / 7" />
@@ -36,6 +48,16 @@
                                 <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
                             </q-btn>
                         </div>
+                        <q-banner rounded class="bg-teal text-white" v-if="isMetaVisible">
+                            <p class="banner-tip">💡 Left line👈 contains the lines generalising a subset of dataset.
+                                Right
+                                line👉 contains the lines displaying specific countires data.</p>
+                            <p class="banner-tip">💡 Drag the brushes next to the line graph to zoom the X-axis/Y-axis
+                            </p>
+                            <template v-slot:action>
+                                <q-btn flat color="white" label="Dismiss" />
+                            </template>
+                        </q-banner>
                         <div class="q-my-md row no-wrap q-col-gutter-x-md items-start">
                             <div class="col-6">
                                 <line-chart-overview title="Daily new confirmed cases comparing with World Line"
@@ -59,6 +81,13 @@
                                 <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
                             </q-btn>
                         </div>
+                        <q-banner rounded class="bg-teal text-white" v-if="isMetaVisible">
+                            <p class="banner-tip">💡 Try to delineate a geographical area with the brush tool and then
+                                look at the histogram information in the area on the right</p>
+                            <template v-slot:action>
+                                <q-btn flat color="white" label="Dismiss" />
+                            </template>
+                        </q-banner>
                         <map-bar-chart category="deaths" />
                     </div>
                 </div>
@@ -84,7 +113,9 @@
             </q-list>
             <q-banner rounded class="bg-blue text-white q-ml-md q-mb-md absolute-bottom">
                 <p class="banner-tip">💡 Click to scroll to views conveniently.</p>
-                <p class="banner-tip">💡 Use <q-icon name="bookmark_border" /> in header to add charts to explorer section</p>
+                <p class="banner-tip">💡 Use
+                    <q-icon name="bookmark_border" /> in header to add charts to explorer section
+                </p>
             </q-banner>
         </q-scroll-area>
     </q-drawer>
@@ -102,8 +133,8 @@ import BarChart from '@/components/charts/bar.vue';
 import Selector from '@/components/selector.vue';
 import LineChartOverview from '@/components/overview-charts/line.vue';
 import MapBarChart from '@/components/charts/map-bar.vue';
-import { mapActions } from 'pinia';
-import { useBookmarks } from '@/stores/bookmarks.js';
+import { mapActions, mapState } from 'pinia';
+import { useBookmarks, useMeta } from '@/stores/bookmarks.js';
 
 export default {
     components: {
@@ -149,7 +180,7 @@ export default {
                         comparatorIdx: 0,
                         xAxisIdx: 5,
                         targetIdx: 1,
-                    },{
+                    }, {
                         name: 'line-chart',
                         category: 'deaths',
                         col: 6,
@@ -175,6 +206,9 @@ export default {
                 }
             ]
         };
+    },
+    computed: {
+        ...mapState(useMeta, ['isMetaVisible']),
     },
     methods: {
         setSelectorVisible() {

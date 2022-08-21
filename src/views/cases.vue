@@ -11,11 +11,13 @@
                                 <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
                             </q-btn>
                         </div>
-                        <q-banner rounded class="bg-teal text-white">
+                        <q-banner rounded class="bg-teal text-white" v-if="isMetaVisible">
                             <p class="banner-tip">💡 Try to use
-                                <q-icon name="filter_alt" /> in the bottom right corner to filter specific countries.
+                                <q-icon name="filter_alt" /> in the bottom right corner to filter specific
+                                countries.
                             </p>
-                            <p class="banner-tip">💡 Check the tooltip infomation to understand parameter meaning while
+                            <p class="banner-tip">💡 Check the tooltip infomation to understand parameter meaning
+                                while
                                 hover mouse on the input.</p>
                             <template v-slot:action>
                                 <q-btn flat color="white" label="Dismiss" />
@@ -46,7 +48,7 @@
                                 <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
                             </q-btn>
                         </div>
-                        <q-banner rounded class="bg-teal text-white">
+                        <q-banner rounded class="bg-teal text-white" v-if="isMetaVisible">
                             <p class="banner-tip">💡 Left line👈 contains the lines generalising a subset of dataset.
                                 Right
                                 line👉 contains the lines displaying specific countires data.</p>
@@ -79,7 +81,7 @@
                                 <q-tooltip>Toogle the the charts to bookmark</q-tooltip>
                             </q-btn>
                         </div>
-                        <q-banner rounded class="bg-teal text-white">
+                        <q-banner rounded class="bg-teal text-white" v-if="isMetaVisible">
                             <p class="banner-tip">💡 Try to delineate a geographical area with the brush tool and then
                                 look at the histogram information in the area on the right</p>
                             <template v-slot:action>
@@ -109,9 +111,11 @@
                     </q-item-section>
                 </q-item>
             </q-list>
-            <q-banner rounded class="bg-blue text-white q-ml-md q-mb-md absolute-bottom">
+            <q-banner rounded class="bg-blue text-white q-ml-md q-mb-md absolute-bottom" v-if="isMetaVisible">
                 <p class="banner-tip">💡 Click to scroll to views conveniently.</p>
-                <p class="banner-tip">💡 Use <q-icon name="bookmark_border" /> in header to add charts to explorer section</p>
+                <p class="banner-tip">💡 Use
+                    <q-icon name="bookmark_border" /> in header to add charts to explorer section
+                </p>
             </q-banner>
         </q-scroll-area>
     </q-drawer>
@@ -129,8 +133,8 @@ import BarChart from '@/components/charts/bar.vue';
 import Selector from '@/components/selector.vue';
 import LineChartOverview from '@/components/overview-charts/line.vue';
 import MapBarChart from '@/components/charts/map-bar.vue';
-import { mapActions } from 'pinia';
-import { useBookmarks } from '@/stores/bookmarks.js';
+import { mapActions, mapState } from 'pinia';
+import { useBookmarks, useMeta } from '@/stores/bookmarks.js';
 
 export default {
     components: {
@@ -203,6 +207,9 @@ export default {
                 },
             ]
         };
+    },
+    computed: {
+        ...mapState(useMeta, ['isMetaVisible']),
     },
     methods: {
         setSelectorVisible() {
