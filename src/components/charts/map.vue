@@ -561,7 +561,11 @@ export default {
         },
         ...mapActions(countriesStore, {
             addSelection: 'addSelection', removeSelection: 'removeSelection'
-        })
+        }),
+        async resizeChart() {
+            await nextTick();
+            this.map.resize();
+        },
     },
     created: function () {
         //  register the en lang for encoder

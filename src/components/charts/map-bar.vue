@@ -1,7 +1,7 @@
 <template>
     <div class="q-my-md q-col-gutter-x-md row no-wrap items-stretch">
         <div class="col-8 self-start">
-            <map-chart :ratio="mapRatio" @targetChange="updateTarget" @brushAreas='updateAreaBrushed'
+            <map-chart ref="map" :ratio="mapRatio" @targetChange="updateTarget" @brushAreas='updateAreaBrushed'
                 @updateTimeRange='updateTimeRange' />
         </div>
         <div class="col-4 row items-stretch">
@@ -381,6 +381,11 @@ export default {
                 that.loading = false;
             });
         },
+        async resizeChart() {
+            await nextTick();
+            this.chart.resize();
+            this.$refs['map'].resizeChart();
+        }
     },
     mounted: async function () {
         this.series = [...this.selection];

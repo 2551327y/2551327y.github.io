@@ -546,7 +546,11 @@ export default {
         },
         ...mapActions(countriesStore, {
             addSelection: 'addSelection', removeSelection: 'removeSelection'
-        })
+        }),
+        async resizeChart() {
+            await nextTick();
+            this.chart.resize();
+        }
     },
     created: function () {
         i18nEncoder.registerLocale(i18n_en);

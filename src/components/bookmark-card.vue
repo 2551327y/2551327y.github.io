@@ -10,9 +10,17 @@
             </ul>
             <q-slide-transition>
                 <div v-show="isEditVisible">
-                    <div class="q-pa-md bg-blue">
-                        
-                    </div>
+                    <q-toolbar class="row wrap bg-teal-1 rounded-borders q-mt-md">
+                        <div class="col-12 row no-wrap justify-between items-center">
+                            <span class="text-weight-bold text-body1">size</span>
+                            <q-select dense :options="sizeOpts" v-model="sizeOpt">
+                                <template v-slot:selected-item="scope">
+                                    <div class="ellipsis">{{ scope.opt.label }}</div>
+                                </template>
+                            </q-select>
+
+                        </div>
+                    </q-toolbar>
                 </div>
             </q-slide-transition>
         </q-card-section>
@@ -32,11 +40,43 @@ export default {
         content: {
             type: Object,
             default: new Object,
+        },
+        sizeOptions: {
+            type: Array,
+            default: function () {
+                return [
+                    {
+                        label: 'Take up 1/3 space of a line',
+                        value: 4,
+                    },
+                    {
+                        label: 'Take up 1/2 space of a line',
+                        value: 6,
+                    },
+                    {
+                        label: 'Take up all space of a line',
+                        value: 12,
+                    },
+                ];
+            },
+        },
+        size: {
+            type: Number,
+            default: 6,
         }
     },
     data() {
         return {
-            isEditVisible: false, 
+            isEditVisible: false,
+            sizeOpt: this.sizeOptions[0],
+            sizeOpts: this.sizeOptions,
+        }
+    },
+    watch: {
+        sizeOpt: {
+            handler: function () {
+                this.modifyBookmark(this.content, 'col', this.sizeOpt.value)
+            }
         }
     },
     methods: {

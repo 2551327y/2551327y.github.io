@@ -2,13 +2,8 @@
     <q-page-container>
         <q-page padding>
             <div v-if="bookmarks.length" class="q-my-md row wrap q-col-gutter-x-md items-start">
-                <div v-for="(bookmark, idx) in bookmarks" :key="idx" :class="`col-${bookmark.col}`">
-                    <div class="text-h6 text-weight-bold q-mb-md">{{ bookmark.title }}</div>
-                    <component :is="bookmark.name" :title="bookmark.title" :color="bookmark.color"
-                        :category="bookmark.category" :comparatorIdx="bookmark.comparatorIdx"
-                        :xAxisIdx="bookmark.xAxisIdx" :targetIdx="bookmark.targetIdx" :scaleIdx="bookmark.scaleIdx"
-                        :filterIdx="bookmark.filterIdx" />
-                </div>
+                
+                <explorer-card v-for="(bookmark, idx) in bookmarks" :key="idx" :bookmark="bookmark" />
             </div>
             <div v-else class="fit row flex-center">
                 <div class="text-center">
@@ -36,6 +31,7 @@ import BarChart from '@/components/charts/bar.vue';
 import Selector from '@/components/selector.vue';
 import LineChartOverview from '@/components/overview-charts/line.vue';
 import MapBarChart from '@/components/charts/map-bar.vue';
+import ExplorerCard from '@/components/explorer-card.vue';
 
 import { mapState } from 'pinia';
 import { useBookmarks } from '@/stores/bookmarks.js';
@@ -47,7 +43,8 @@ export default {
         BarChart,
         Selector,
         LineChartOverview,
-        MapBarChart
+        MapBarChart,
+        ExplorerCard,
     },
     data() {
         return {

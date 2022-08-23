@@ -4,6 +4,8 @@
             <nav-bar @toggleDrawer="toggleDrawer"></nav-bar>
         </q-header>
 
+        <initialization />
+
         <q-drawer v-model="drawer" overlay :width="300" :breakpoint="700" elevated class="z-top rounded-borders">
             <q-scroll-area class="fit">
                 <q-list v-if="bookmarks.length" padding>
@@ -34,15 +36,18 @@
 <script>
 import NavBar from "@/components/nav-bar.vue";
 import BookmarkCard from "@/components/bookmark-card.vue";
+import Initialization from "./components/initialization.vue";
 import { mapState } from 'pinia';
 import { useBookmarks } from '@/stores/bookmarks.js';
 
 export default {
     components: {
-        NavBar,
-        BookmarkCard,
-        BookmarkCard
-    },
+    NavBar,
+    BookmarkCard,
+    BookmarkCard,
+    Initialization,
+    Initialization
+},
     data() {
         return {
             drawer: false,

@@ -13,7 +13,17 @@ export const useMeta = defineStore('useMeta', {
         }
     }
 })
-
+/**
+ * Format example
+ * 
+ * [{
+    name: 'bar-chart',
+    category: 'cases',
+    col: 6,
+    title: 'Daily new confirmed cases Rank',
+    targetIdx: 1,
+}]
+ */
 export const useBookmarks = defineStore('useBookmarks', {
     state: () => {
         return {

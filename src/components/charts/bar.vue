@@ -374,8 +374,7 @@ export default {
             this.isFullscreen = !this.isFullscreen;
             this.chartRatio = this.isFullscreen ? (16 / 7) : this.ratio;
             // waitting for next update
-            await nextTick();
-            this.bar.resize();
+            this.resizeChart();
         },
         async pullRaw() {
             const that = this;
@@ -384,6 +383,10 @@ export default {
                 that.dataset.raw = raw;
                 that.loading = false;
             });
+        },
+        async resizeChart() {
+            await nextTick();
+            this.bar.resize();
         }
     },
     created: function () {
