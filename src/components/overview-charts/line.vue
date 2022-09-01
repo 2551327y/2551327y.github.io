@@ -293,6 +293,17 @@ export default {
                     throttleType: 'debounce',
                     throttleDelay: 300,
                 },
+                toolbox: {
+                    feature: {
+                        saveAsImage: {
+                            type: 'png',
+                            pixelRatio: 2,
+                        },
+                        dataView: {
+
+                        }
+                    }
+                },
                 tooltip: {
                     show: true,
                     trigger: 'item',

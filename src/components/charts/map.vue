@@ -264,6 +264,15 @@ export default {
                     id: 'toolbox',
                     orient: 'vertical',
                     left: 0,
+                    feature: {
+                        saveAsImage: {
+                            type: 'png',
+                            pixelRatio: 2,
+                        },
+                        dataView: {
+                            
+                        }
+                    }
                 },
             });
 

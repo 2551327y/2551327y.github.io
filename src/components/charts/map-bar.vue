@@ -167,6 +167,16 @@ export default {
                         }
                     }
                 ],
+                toolbox: {
+                    feature: {
+                        saveAsImage: {
+                            type: 'png',
+                        },
+                        dataView: {
+
+                        }
+                    }
+                },
                 dataZoom: [
                     {
                         xAxisIndex: 1,

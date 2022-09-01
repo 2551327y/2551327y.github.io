@@ -294,6 +294,16 @@ export default {
                         xAxisIndex: 0,
                     },
                 ],
+                toolbox: {
+                    feature: {
+                        saveAsImage: {
+                            type: 'png',
+                        },
+                        dataView: {
+
+                        }
+                    }
+                },
                 brush: {
                     id: 'brush',
                     toolbox: ['lineX', 'clear'],

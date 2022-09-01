@@ -7,7 +7,10 @@
                 </div>
                 <div class="q-my-md row no-wrap q-col-gutter-x-md items-start">
                     <div :class="`col-${chart.col}`" v-for="(chart, idx) in charts" :key="chart.name">
-                        <component :is="chart.name"></component>
+                        <component :is="chart.name" :title="chart.title" :color="chart.color"
+                            :category="chart.category" :comparatorIdx="chart.comparatorIdx"
+                            :xAxisIdx="chart.xAxisIdx" :targetIdx="chart.targetIdx" :scaleIdx="chart.scaleIdx"
+                            :filterIdx="chart.filterIdx"></component>
                     </div>
                 </div>
             </div>

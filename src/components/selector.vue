@@ -30,13 +30,21 @@
             </q-td>
         </template>
         <template #bottom>
-            <div class="row no-wrap q-ma-sm justify-end q-col-gutter-x-md full-width">
-                <div>
-                    <q-btn flat outlined v-ripple color="warning" label="cancel" v-close-popup />
-                </div>
-                <div>
-                    <q-btn flat outlined v-ripple class="bg-teal" color="white" v-close-popup label="confirm"
-                        @click="updateSelection" />
+            <div class="row no-wrap q-ma-sm justify-between q-col-gutter-x-md full-width">
+                <q-select class="full-width" options-cover dense outlined :options="operators" :option-value="item => item.value"
+                    :option-label="item => item.name" v-model="operator" label="Operator" stack-label>
+                    <template #selected-item="scope">
+                        <div class="ellipsis">{{ scope.opt.name }}</div>
+                    </template>
+                </q-select>
+                <div class="row no-wrap justify-end">
+                    <div>
+                        <q-btn flat outlined v-ripple color="warning" label="cancel" v-close-popup />
+                    </div>
+                    <div>
+                        <q-btn flat outlined v-ripple class="bg-teal" color="white" v-close-popup label="confirm"
+                            @click="updateSelection" />
+                    </div>
                 </div>
             </div>
         </template>
@@ -48,7 +56,8 @@ import { countriesStore } from '@/stores/countries.js';
 import { i18nEncoder, i18n_en } from '@/assets/util.js';
 import propMeta from '@/assets/owid-covid-data.meta.prop.json';
 import * as d3 from 'd3';
-import { mapWritableState } from 'pinia'
+import { mapWritableState } from 'pinia';
+import { operators } from '@/assets/charts.config.js';
 
 export default {
     data() {
@@ -71,6 +80,8 @@ export default {
             type: propMeta.keys[0],
             formatter: d3.format(','),
             isAscending: false,
+            operators: operators,
+            operator: operators[0],
         }
     },
     watch: {

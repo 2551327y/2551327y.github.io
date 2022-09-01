@@ -250,6 +250,17 @@ export default {
                     inverse: true,
                     nameLocation: 'middle',
                 },
+                toolbox: {
+                    feature: {
+                        saveAsImage: {
+                            type: 'png',
+                            pixelRatio: 2,
+                        },
+                        dataView: {
+
+                        }
+                    }
+                },
                 series: [
                     {
                         id: 'bar',
